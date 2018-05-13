@@ -63,6 +63,10 @@ func (i *Item) consume(str string, min int, max int, seq Sequence) (string, []Ex
 	outStr, seq1, err := i.Sequence.Consume(str)
 
 	if err != nil {
+		if min <= 0 {
+			return str, seq, nil
+		}
+
 		return "", nil, err
 	}
 
@@ -72,7 +76,7 @@ func (i *Item) consume(str string, min int, max int, seq Sequence) (string, []Ex
 
 	if err != nil {
 		if min > 0 {
-			return str, nil, NoMatch
+			return str, nil, err
 		}
 
 		return "", nil, err
