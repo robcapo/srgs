@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -57,10 +56,8 @@ func (i *Item) Consume(str string) (string, []Expansion, error) {
 	return i.consume(str, i.repeatMin, i.repeatMax, nil)
 }
 func (i *Item) consume(str string, min int, max int, seq Sequence) (string, []Expansion, error) {
-	fmt.Println("Consuming", str, min, max, seq)
 	if max == 0 {
-		fmt.Println("returning because max 0")
-		return str, nil, nil
+		return str, seq, nil
 	}
 
 	outStr, seq1, err := i.Sequence.Consume(str)
@@ -69,12 +66,9 @@ func (i *Item) consume(str string, min int, max int, seq Sequence) (string, []Ex
 		return "", nil, err
 	}
 
-	fmt.Println("appending", seq1)
-
 	seq = append(seq, seq1...)
 
-	outStr, seq2, err := i.consume(outStr, min-1, max-1, nil)
-	fmt.Println("result", outStr, seq2, err)
+	outStr, seq2, err := i.consume(outStr, min-1, max-1, seq)
 
 	if err != nil {
 		if min > 0 {
@@ -84,11 +78,7 @@ func (i *Item) consume(str string, min int, max int, seq Sequence) (string, []Ex
 		return "", nil, err
 	}
 
-	fmt.Println("appending", seq2)
-
-	seq = append(seq, seq2...)
-
-	return outStr, seq, nil
+	return outStr, seq2, nil
 }
 
 type Sequence []Expansion
