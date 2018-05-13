@@ -41,9 +41,20 @@ type Expansion interface {
 	// - PrefixOnly if the entire text is only a prefix in the expansion.
 	// - NoMatch if the string does not match the expansion at all
 	Consume(str string) (string, Sequence, error)
+}
 
-	// Adds this Expansion to a Path. Usually called on a
-	AddToPath(p Path)
+type Alternative []Item
+
+func (a Alternative) Consume(str string) (string, Sequence, error) {
+	for _, alt := range a {
+		out, seq, err := alt.Consume(str)
+
+		if err == nil {
+			return out, seq, err
+		}
+	}
+
+	return "", nil, NoMatch
 }
 
 type Item struct {
@@ -52,10 +63,10 @@ type Item struct {
 	repeatMax int
 }
 
-func (i *Item) Consume(str string) (string, []Expansion, error) {
+func (i Item) Consume(str string) (string, Sequence, error) {
 	return i.consume(str, i.repeatMin, i.repeatMax, nil)
 }
-func (i *Item) consume(str string, min int, max int, seq Sequence) (string, []Expansion, error) {
+func (i Item) consume(str string, min int, max int, seq Sequence) (string, Sequence, error) {
 	if max == 0 {
 		return str, seq, nil
 	}
@@ -104,11 +115,6 @@ func (s Sequence) Consume(str string) (string, Sequence, error) {
 
 	return str, out, nil
 }
-func (s Sequence) AddToPath(p Path) {
-	for _, e := range s {
-		e.AddToPath(p)
-	}
-}
 
 type Token string
 
@@ -133,9 +139,7 @@ func (t Token) Consume(str string) (string, Sequence, error) {
 
 	return "", nil, NoMatch
 }
-func (t Token) AddToPath(p Path) { p.AddString(string(t)) }
 
 type Tag string
 
 func (t Tag) Consume(str string) (string, Sequence, error) { return str, []Expansion{t}, nil }
-func (t Tag) AddToPath(p Path)                             { p.AddTag(t) }

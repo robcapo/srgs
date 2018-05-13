@@ -153,3 +153,40 @@ func TestItem_Consume(t *testing.T) {
 	_, _, err = item.Consume("i am an antler i am an aard")
 	assert.Equal(NoMatch, err)
 }
+
+func TestAlternative_Consume(t *testing.T) {
+	assert := assert.New(t)
+
+	iAmAn := Item{Sequence{Token("i am an")}, 1, 1}
+	antler := Item{Sequence{Token("antler")}, 1, 1}
+	aardvark := Item{Sequence{Token("aardvark")}, 1, 1}
+
+	all := Sequence{iAmAn, Alternative{antler, aardvark}}
+
+	str, seq, err := all.Consume("i am an antler")
+
+	assert.Empty(str)
+	assert.Nil(err)
+	if assert.Len(seq, 2) {
+		assert.Equal("i am an", string(seq[0].(Token)))
+		assert.Equal("antler", string(seq[1].(Token)))
+	}
+
+	str, seq, err = all.Consume("i am an aardvark")
+
+	assert.Empty(str)
+	assert.Nil(err)
+	if assert.Len(seq, 2) {
+		assert.Equal("i am an", string(seq[0].(Token)))
+		assert.Equal("aardvark", string(seq[1].(Token)))
+	}
+
+	_, _, err = all.Consume("i am an")
+	assert.Equal(PrefixOnly, err)
+
+	_, _, err = all.Consume("i am an ant")
+	assert.Equal(PrefixOnly, err)
+
+	_, _, err = all.Consume("i am an ape")
+	assert.Equal(NoMatch, err)
+}
