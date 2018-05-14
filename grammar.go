@@ -42,7 +42,7 @@ type Expansion interface {
 	// - NoMatch if the string does not match the expansion at all
 	Consume(str string) (string, Sequence, error)
 
-	AppendToProcessor(processor Processor) error
+	AppendToProcessor(processor Processor)
 }
 
 type Alternative []Item
@@ -64,9 +64,7 @@ func (a Alternative) Consume(str string) (string, Sequence, error) {
 	return "", nil, outErr
 }
 
-func (a Alternative) AppendToProcessor(p Processor) error {
-	return nil
-}
+func (a Alternative) AppendToProcessor(p Processor) {}
 
 type Item struct {
 	Sequence
@@ -126,15 +124,10 @@ func (s Sequence) Consume(str string) (string, Sequence, error) {
 
 	return str, out, nil
 }
-func (s Sequence) AppendToProcessor(p Processor) error {
+func (s Sequence) AppendToProcessor(p Processor) {
 	for _, exp := range s {
-		err := exp.AppendToProcessor(p)
-		if err != nil {
-			return err
-		}
+		exp.AppendToProcessor(p)
 	}
-
-	return nil
 }
 
 type Token string
@@ -160,15 +153,9 @@ func (t Token) Consume(str string) (string, Sequence, error) {
 
 	return "", nil, NoMatch
 }
-func (t Token) AppendToProcessor(p Processor) error {
-	p.AppendString(string(t))
-
-	return nil
-}
+func (t Token) AppendToProcessor(p Processor) { p.AppendString(string(t)) }
 
 type Tag string
 
 func (t Tag) Consume(str string) (string, Sequence, error) { return str, []Expansion{t}, nil }
-func (t Tag) AppendToProcessor(p Processor) error {
-	return p.AppendTag(string(t))
-}
+func (t Tag) AppendToProcessor(p Processor)                { p.AppendTag(string(t)) }

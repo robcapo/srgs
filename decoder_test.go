@@ -32,5 +32,9 @@ func TestParseXml(t *testing.T) {
 
 	seq.AppendToProcessor(processor)
 
-	assert.Equal("i am an antler", processor.GetString())
+	out, err := processor.GetString()
+
+	assert.Nil(err)
+
+	assert.Equal("i am an antler", out)
 }
