@@ -41,6 +41,8 @@ type Expansion interface {
 	// - PrefixOnly if the entire text is only a prefix in the expansion.
 	// - NoMatch if the string does not match the expansion at all
 	Consume(str string) (string, Sequence, error)
+
+	AppendToProcessor(processor Processor) error
 }
 
 type Alternative []Item
@@ -60,6 +62,10 @@ func (a Alternative) Consume(str string) (string, Sequence, error) {
 	}
 
 	return "", nil, outErr
+}
+
+func (a Alternative) AppendToProcessor(p Processor) error {
+	return nil
 }
 
 type Item struct {
@@ -120,6 +126,16 @@ func (s Sequence) Consume(str string) (string, Sequence, error) {
 
 	return str, out, nil
 }
+func (s Sequence) AppendToProcessor(p Processor) error {
+	for _, exp := range s {
+		err := exp.AppendToProcessor(p)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 type Token string
 
@@ -144,7 +160,15 @@ func (t Token) Consume(str string) (string, Sequence, error) {
 
 	return "", nil, NoMatch
 }
+func (t Token) AppendToProcessor(p Processor) error {
+	p.AppendString(string(t))
+
+	return nil
+}
 
 type Tag string
 
 func (t Tag) Consume(str string) (string, Sequence, error) { return str, []Expansion{t}, nil }
+func (t Tag) AppendToProcessor(p Processor) error {
+	return p.AppendTag(string(t))
+}
