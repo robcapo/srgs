@@ -46,15 +46,20 @@ type Expansion interface {
 type Alternative []Item
 
 func (a Alternative) Consume(str string) (string, Sequence, error) {
+	outErr := NoMatch
 	for _, alt := range a {
 		out, seq, err := alt.Consume(str)
 
 		if err == nil {
 			return out, seq, err
 		}
+
+		if err == PrefixOnly {
+			outErr = PrefixOnly
+		}
 	}
 
-	return "", nil, NoMatch
+	return "", nil, outErr
 }
 
 type Item struct {
