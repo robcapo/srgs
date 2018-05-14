@@ -2,6 +2,7 @@ package srgs
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -25,11 +26,34 @@ type Expansion interface {
 }
 
 type RuleRef struct {
-	rule *Expansion
+	rule   *Expansion
+	ruleId string
 }
 
 func (r RuleRef) Consume(str string) (string, Sequence, error) {
-	return (*r.rule).Consume(str)
+	str, seq, err := (*r.rule).Consume(str)
+
+	if err != nil {
+		return str, seq, err
+	}
+
+	preProcess := Tag(fmt.Sprintf(`
+rules.%s = {};
+
+if (root == undefined) {
+	root = rules.%s;
+}
+
+(function() {
+	var out;
+`, r.ruleId, r.ruleId))
+
+	postProcess := Tag(fmt.Sprintf(`
+	rules.%s.out = out;
+})();
+`, r.ruleId))
+
+	return str, Sequence{preProcess, seq, postProcess}, nil
 }
 func (r RuleRef) AppendToProcessor(p Processor) {}
 

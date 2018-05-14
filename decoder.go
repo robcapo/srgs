@@ -22,6 +22,7 @@ type Grammar struct {
 	Root Expansion
 	Xml  string
 
+	root     Expansion
 	rules    Rules
 	ruleRefs map[string][]*RuleRef
 }
@@ -51,6 +52,8 @@ func (g *Grammar) LoadXml(xml string) error {
 		return NoRoot
 	}
 
+	var root Expansion
+
 	g.rules = Rules{}
 	g.ruleRefs = make(map[string][]*RuleRef)
 
@@ -62,7 +65,7 @@ func (g *Grammar) LoadXml(xml string) error {
 		}
 
 		if id == rootId {
-			g.Root = exp
+			root = exp
 		}
 
 		g.rules[id] = exp
@@ -76,7 +79,7 @@ func (g *Grammar) LoadXml(xml string) error {
 		}
 	}
 
-	if g.Root == nil {
+	if root == nil {
 		return RootNotFound
 	}
 
@@ -86,6 +89,11 @@ func (g *Grammar) LoadXml(xml string) error {
 			refs += ref + ", "
 		}
 		return errors.New("unresolved rule refs: " + strings.TrimSuffix(refs, ", "))
+	}
+
+	g.Root = RuleRef{
+		ruleId: rootId,
+		rule:   &root,
 	}
 
 	return nil
@@ -128,13 +136,14 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 				}
 
 				ruleRef := new(RuleRef)
+				ruleRef.ruleId = ref[1:]
 
 				out = append(out, ruleRef)
 
-				if rule, ok := g.rules[ref[1:]]; ok {
+				if rule, ok := g.rules[ruleRef.ruleId]; ok {
 					ruleRef.rule = &rule
 				} else {
-					g.ruleRefs[ref[1:]] = append(g.ruleRefs[ref[1:]], ruleRef)
+					g.ruleRefs[ruleRef.ruleId] = append(g.ruleRefs[ruleRef.ruleId], ruleRef)
 				}
 			} else if el.Tag == "item" {
 				exp, err := g.decodeElement(el)
@@ -162,7 +171,7 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 			} else if el.Tag == "example" {
 				// ignore
 			} else {
-				return nil, errors.New("unable to parse tag " + el.Tag)
+				return nil, errors.New("unable to parse tag " + el.Tag + " " + el.SelectAttrValue("id", "no id"))
 			}
 		} else {
 			fmt.Println("Unable to process", tok, "Ignoring.")
