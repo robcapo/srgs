@@ -5,6 +5,73 @@ import (
 	"testing"
 )
 
+var digitsXml = `<?xml version="1.0" encoding="UTF-8" ?>
+<grammar xmlns="http://www.w3.org/2001/06/grammar" version="1.0" xml:lang="en-US" root="example" tag-format="swi-semantics/1.0">
+	<rule id="example">
+		my number is <ruleref uri="#triplet" /><tag>out = rules.triplet.out;</tag>
+	</rule>
+
+	<rule id="triplet">
+		<one-of>
+			<item>
+				<ruleref uri="#doublet" />
+				<ruleref uri="#digit" />
+				<tag>out = rules.doublet.out + rules.digit.out;</tag>
+			</item>
+			<item>
+				<ruleref uri="#digit" />
+				<ruleref uri="#doublet" />
+				<tag>out = rules.digit.out + rules.doublet.out;</tag>
+			</item>
+			<item repeat="3">
+				<ruleref uri="#digit" />
+				<tag>out = out ? out + rules.digit.out : rules.digit.out;</tag>
+			</item>
+			<item>
+				triple
+				<ruleref uri="#digit" />
+				<tag>out = rules.digit.out + rules.digit.out + rules.digit.out;</tag>
+			</item>
+		</one-of>
+	</rule>
+
+	<rule id="doublet">
+		<one-of>
+			<item>ten <tag>out = '10';</tag></item>
+			<item>eleven <tag>out = '11';</tag></item>
+			<item>twelve <tag>out = '12';</tag></item>
+			<item>thirteen <tag>out = '13';</tag></item>
+			<item>fourteen <tag>out = '14';</tag></item>
+			<item>fifteen <tag>out = '15';</tag></item>
+			<item>sixteen <tag>out = '16';</tag></item>
+			<item>seventeen <tag>out = '17';</tag></item>
+			<item>eighteen <tag>out = '18';</tag></item>
+			<item>nineteen <tag>out = '19';</tag></item>
+			<item repeat="2">
+				<ruleref uri="#digit" />
+				<tag>out = out ? out + rules.digit.out : rules.digit.out;</tag>
+			</item>
+		</one-of>
+	</rule>
+
+	<rule id="digit">
+		<one-of>
+			<item>one <tag>out = '1';</tag></item>
+			<item>two <tag>out = '2';</tag></item>
+			<item>three <tag>out = '3';</tag></item>
+			<item>four <tag>out = '4';</tag></item>
+			<item>five <tag>out = '5';</tag></item>
+			<item>six <tag>out = '6';</tag></item>
+			<item>seven <tag>out = '7';</tag></item>
+			<item>eight <tag>out = '8';</tag></item>
+			<item>nine <tag>out = '9';</tag></item>
+			<item>zero <tag>out = '0';</tag></item>
+			<item>oh <tag>out = '0';</tag></item>
+		</one-of>
+	</rule>
+</grammar>
+`
+
 func TestParseXml(t *testing.T) {
 	assert := assert.New(t)
 
@@ -111,77 +178,20 @@ func TestSisr(t *testing.T) {
 	assert.Equal("15", inst)
 }
 
+func BenchmarkDigits(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	for i := 0; i < b.N; i++ {
+		g.Root.Consume("my number is one two three")
+	}
+}
+
 func TestDigits(t *testing.T) {
 	assert := assert.New(t)
 
-	xml := `<?xml version="1.0" encoding="UTF-8" ?>
-<grammar xmlns="http://www.w3.org/2001/06/grammar" version="1.0" xml:lang="en-US" root="example" tag-format="swi-semantics/1.0">
-	<rule id="example">
-		my number is <ruleref uri="#triplet" /><tag>out = rules.triplet.out;</tag>
-	</rule>
-
-	<rule id="triplet">
-		<one-of>
-			<item>
-				<ruleref uri="#doublet" />
-				<ruleref uri="#digit" />
-				<tag>out = rules.doublet.out + rules.digit.out;</tag>
-			</item>
-			<item>
-				<ruleref uri="#digit" />
-				<ruleref uri="#doublet" />
-				<tag>out = rules.digit.out + rules.doublet.out;</tag>
-			</item>
-			<item repeat="3">
-				<ruleref uri="#digit" />
-				<tag>out = out ? out + rules.digit.out : rules.digit.out;</tag>
-			</item>
-			<item>
-				triple
-				<ruleref uri="#digit" />
-				<tag>out = rules.digit.out + rules.digit.out + rules.digit.out;</tag>
-			</item>
-		</one-of>
-	</rule>
-
-	<rule id="doublet">
-		<one-of>
-			<item>ten <tag>out = '10';</tag></item>
-			<item>eleven <tag>out = '11';</tag></item>
-			<item>twelve <tag>out = '12';</tag></item>
-			<item>thirteen <tag>out = '13';</tag></item>
-			<item>fourteen <tag>out = '14';</tag></item>
-			<item>fifteen <tag>out = '15';</tag></item>
-			<item>sixteen <tag>out = '16';</tag></item>
-			<item>seventeen <tag>out = '17';</tag></item>
-			<item>eighteen <tag>out = '18';</tag></item>
-			<item>nineteen <tag>out = '19';</tag></item>
-			<item repeat="2">
-				<ruleref uri="#digit" />
-				<tag>out = out ? out + rules.digit.out : rules.digit.out;</tag>
-			</item>
-		</one-of>
-	</rule>
-
-	<rule id="digit">
-		<one-of>
-			<item>one <tag>out = '1';</tag></item>
-			<item>two <tag>out = '2';</tag></item>
-			<item>three <tag>out = '3';</tag></item>
-			<item>four <tag>out = '4';</tag></item>
-			<item>five <tag>out = '5';</tag></item>
-			<item>six <tag>out = '6';</tag></item>
-			<item>seven <tag>out = '7';</tag></item>
-			<item>eight <tag>out = '8';</tag></item>
-			<item>nine <tag>out = '9';</tag></item>
-			<item>zero <tag>out = '0';</tag></item>
-			<item>oh <tag>out = '0';</tag></item>
-		</one-of>
-	</rule>
-</grammar>
-`
 	g := NewGrammar()
-	err := g.LoadXml(xml)
+	err := g.LoadXml(digitsXml)
 
 	if !assert.Nil(err) {
 		return
