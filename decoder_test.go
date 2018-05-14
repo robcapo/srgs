@@ -151,15 +151,15 @@ func TestDigits(t *testing.T) {
 	<rule id="doublet">
 		<one-of>
 			<item>ten <tag>out = '10';</tag></item>
-			<item>eleven <tag>out = '10';</tag></item>
-			<item>twelve <tag>out = '10';</tag></item>
-			<item>thirteen <tag>out = '10';</tag></item>
-			<item>fourteen <tag>out = '10';</tag></item>
-			<item>fifteen <tag>out = '10';</tag></item>
-			<item>sixteen <tag>out = '10';</tag></item>
-			<item>seventeen <tag>out = '10';</tag></item>
-			<item>eighteen <tag>out = '10';</tag></item>
-			<item>nineteen <tag>out = '10';</tag></item>
+			<item>eleven <tag>out = '11';</tag></item>
+			<item>twelve <tag>out = '12';</tag></item>
+			<item>thirteen <tag>out = '13';</tag></item>
+			<item>fourteen <tag>out = '14';</tag></item>
+			<item>fifteen <tag>out = '15';</tag></item>
+			<item>sixteen <tag>out = '16';</tag></item>
+			<item>seventeen <tag>out = '17';</tag></item>
+			<item>eighteen <tag>out = '18';</tag></item>
+			<item>nineteen <tag>out = '19';</tag></item>
 			<item>
 				<ruleref uri="#digit" />
 				<tag>out = rules.digit.out;</tag>
