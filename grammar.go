@@ -22,11 +22,6 @@ type Path interface {
 	AddTag(tag Tag)
 }
 
-type Grammar struct {
-	rules Rules
-	root  *Expansion
-}
-
 type Rules map[string]Expansion
 
 // An expansion is any part of a grammar that can

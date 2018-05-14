@@ -16,18 +16,18 @@ var (
 	EmptyRuleRefUri    = errors.New("rulerefs must have a non-zero uri")
 )
 
-type Parser struct {
+type Grammar struct {
 	Root  Expansion
 	rules Rules
 	Xml   string
 }
 
-func NewParser() *Parser {
-	return new(Parser)
+func NewGrammar() *Grammar {
+	return new(Grammar)
 }
 
-func (p *Parser) LoadXml(xml string) error {
-	p.Xml = xml
+func (g *Grammar) LoadXml(xml string) error {
+	g.Xml = xml
 
 	doc := etree.NewDocument()
 
@@ -47,42 +47,42 @@ func (p *Parser) LoadXml(xml string) error {
 		return NoRoot
 	}
 
-	p.rules = Rules{}
+	g.rules = Rules{}
 
 	for _, rule := range grammar.SelectElements("rule") {
-		id, exp, err := p.decodeRule(rule)
+		id, exp, err := g.decodeRule(rule)
 
 		if err != nil {
 			return err
 		}
 
 		if id == rootId {
-			p.Root = exp
+			g.Root = exp
 		}
 
-		p.rules[id] = exp
+		g.rules[id] = exp
 	}
 
-	if p.Root == nil {
+	if g.Root == nil {
 		return RootNotFound
 	}
 
 	return nil
 }
 
-func (p *Parser) decodeRule(rule *etree.Element) (string, Expansion, error) {
+func (g *Grammar) decodeRule(rule *etree.Element) (string, Expansion, error) {
 	id := rule.SelectAttrValue("id", "")
 
 	if id == "" {
 		return "", nil, UnidentifiableRule
 	}
 
-	exp, err := p.decodeElement(rule)
+	exp, err := g.decodeElement(rule)
 
 	return id, exp, err
 }
 
-func (p *Parser) decodeElement(element *etree.Element) (Expansion, error) {
+func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 	var out Sequence
 
 	for _, tok := range element.Child {
@@ -106,11 +106,11 @@ func (p *Parser) decodeElement(element *etree.Element) (Expansion, error) {
 					return nil, errors.New("cannot understand ruleref uri " + ref + " because it is not local")
 				}
 
-				if rule, ok := p.rules[ref[1:]]; ok {
+				if rule, ok := g.rules[ref[1:]]; ok {
 					out = append(out, rule)
 				}
 			} else if el.Tag == "item" {
-				exp, err := p.decodeElement(el)
+				exp, err := g.decodeElement(el)
 
 				if err != nil {
 					return nil, err
@@ -120,7 +120,7 @@ func (p *Parser) decodeElement(element *etree.Element) (Expansion, error) {
 			} else if el.Tag == "one-of" {
 				alt := Alternative{}
 				for _, item := range el.SelectElements("item") {
-					exp, err := p.decodeElement(item)
+					exp, err := g.decodeElement(item)
 
 					if err != nil {
 						return nil, err
