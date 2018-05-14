@@ -19,11 +19,11 @@ func TestParseXml(t *testing.T) {
 	</rule>
 </grammar>
 `
-	root, err := ParseXml(xml)
-
+	p := new(Parser)
+	err := p.LoadXml(xml)
 	assert.Nil(err)
 
-	prefix, seq, err := root.Consume("i am an antler")
+	prefix, seq, err := p.Root.Consume("i am an antler")
 
 	assert.Nil(err)
 	assert.Equal("", prefix)
@@ -33,5 +33,4 @@ func TestParseXml(t *testing.T) {
 	seq.AppendToProcessor(processor)
 
 	assert.Equal("i am an antler", processor.GetString())
-
 }

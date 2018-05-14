@@ -1,5 +1,7 @@
 package main
 
+import "strings"
+
 type Processor interface {
 	AppendString(str string)
 
@@ -12,10 +14,10 @@ type SimpleProcessor struct {
 	output string
 }
 
-func (s *SimpleProcessor) AppendString(str string) { s.output += str }
+func (s *SimpleProcessor) AppendString(str string) { s.output = strings.TrimSpace(s.output + " " + str) }
 
 func (s *SimpleProcessor) AppendTag(body string) error {
-	s.output += body
+	s.output += strings.TrimSpace(s.output + " " + strings.TrimSpace(body))
 
 	return nil
 }
