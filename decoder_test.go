@@ -117,7 +117,7 @@ func TestDigits(t *testing.T) {
 	xml := `<?xml version="1.0" encoding="UTF-8" ?>
 <grammar xmlns="http://www.w3.org/2001/06/grammar" version="1.0" xml:lang="en-US" root="example" tag-format="swi-semantics/1.0">
 	<rule id="example">
-		<item>my number is <ruleref uri="#triplet" /><tag>out = rules.triplet.out;</tag></item>
+		my number is <ruleref uri="#triplet" /><tag>out = rules.triplet.out;</tag>
 	</rule>
 
 	<rule id="triplet">
@@ -132,13 +132,9 @@ func TestDigits(t *testing.T) {
 				<ruleref uri="#doublet" />
 				<tag>out = rules.digit.out + rules.doublet.out;</tag>
 			</item>
-			<item>
+			<item repeat="3">
 				<ruleref uri="#digit" />
-				<tag>out = rules.digit.out;</tag>
-				<ruleref uri="#digit" />
-				<tag>out += rules.digit.out;</tag>
-				<ruleref uri="#digit" />
-				<tag>out += rules.digit.out;</tag>
+				<tag>out = out ? out + rules.digit.out : rules.digit.out;</tag>
 			</item>
 			<item>
 				triple
@@ -160,11 +156,9 @@ func TestDigits(t *testing.T) {
 			<item>seventeen <tag>out = '17';</tag></item>
 			<item>eighteen <tag>out = '18';</tag></item>
 			<item>nineteen <tag>out = '19';</tag></item>
-			<item>
+			<item repeat="2">
 				<ruleref uri="#digit" />
-				<tag>out = rules.digit.out;</tag>
-				<ruleref uri="#digit" /> 
-				<tag>out += rules.digit.out;</tag>
+				<tag>out = out ? out + rules.digit.out : rules.digit.out;</tag>
 			</item>
 		</one-of>
 	</rule>
