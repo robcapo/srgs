@@ -45,7 +45,7 @@ func TestParseXml(t *testing.T) {
 	_, _, err = g.Root.Consume("i am a")
 	assert.Equal(PrefixOnly, err)
 
-	_, _, err = g.Root.Consume("i am a human")
+	_, _, err = g.Root.Consume("i am an ape")
 	assert.Equal(NoMatch, err)
 }
 
