@@ -8,20 +8,6 @@ import (
 var NoMatch = errors.New("cannot consume string with token")
 var PrefixOnly = errors.New("string matched is a prefix")
 
-// <rule id="foo">
-// 	hello
-//  <item repeat="3-">foo</item>
-//  <one-of>
-// 		<item>bar</item>
-// 		<item weight="2">baz</item>
-// 	</one-of>
-// </rule>
-
-type Path interface {
-	AddString(str string)
-	AddTag(tag Tag)
-}
-
 // An expansion is any part of a grammar that can
 // match a string
 type Expansion interface {
