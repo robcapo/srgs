@@ -52,9 +52,61 @@ func TestParseXml(t *testing.T) {
 	assert.Equal(NoMatch, err)
 }
 
+func TestSisr(t *testing.T) {
+	assert := assert.New(t)
+
+	xml := `<?xml version="1.0" encoding="UTF-8" ?>
+<grammar xmlns="http://www.w3.org/2001/06/grammar" version="1.0" xml:lang="en-US" root="example" tag-format="swi-semantics/1.0">
+	<rule scope="public" id="example">
+		my age is
+		<one-of>
+			<item>
+				ten
+				<tag>out = 10;</tag>
+			</item>
+			<item>
+				fifteen
+				<tag>out = 15;</tag>
+			</item>
+			<item>
+				twenty
+				<tag>out = 20;</tag>
+			</item>
+		</one-of>
+	</rule>
+</grammar>
+`
+	g := NewGrammar()
+	err := g.LoadXml(xml)
+
+	if !assert.Nil(err) {
+		return
+	}
+
+	_, seq, err := g.Root.Consume("my age is fifteen")
+
+	if !assert.Nil(err) {
+		return
+	}
+
+	p := new(SISRProcessor)
+
+	seq.AppendToProcessor(p)
+
+	assert.Equal("my age is fifteen", p.GetInterpretation())
+
+	inst, err := p.GetInstance()
+
+	if !assert.Nil(err) {
+		return
+	}
+
+	assert.Equal("15", inst)
+}
+
 func processExpansion(exp Expansion) (string, error) {
 	processor := new(SimpleProcessor)
 	exp.AppendToProcessor(processor)
 
-	return processor.GetString()
+	return processor.GetInterpretation(), nil
 }
