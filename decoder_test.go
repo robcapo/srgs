@@ -178,12 +178,35 @@ func TestSisr(t *testing.T) {
 	assert.Equal("15", inst)
 }
 
-func BenchmarkDigits(b *testing.B) {
+func BenchmarkDigitsMy(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
+	benchmarkDigits(b, g, "my")
+}
+func BenchmarkDigitsMyNumber(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkDigits(b, g, "my number")
+}
+func BenchmarkDigitsMyNumberIs(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkDigits(b, g, "my number is")
+}
+func BenchmarkDigitsMyNumberIsOneTwoThree(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkDigits(b, g, "my number is one two three")
+}
+
+
+func benchmarkDigits(b *testing.B, g *Grammar, prefix string) {
 	for i := 0; i < b.N; i++ {
-		g.Root.Consume("my number is one two three")
+		g.Root.Consume(prefix)
 	}
 }
 
