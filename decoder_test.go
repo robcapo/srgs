@@ -11,7 +11,10 @@ func TestParseXml(t *testing.T) {
 	xml := `<?xml version="1.0" encoding="UTF-8" ?>
 <grammar xmlns="http://www.w3.org/2001/06/grammar" version="1.0" xml:lang="en-US" root="example" tag-format="swi-semantics/1.0">
 	<rule scope="public" id="example">
-		i am an
+		i am an <ruleref uri="#animal" />
+	</rule>
+
+	<rule id="animal">
 		<one-of>
 			<item>antler</item>
 			<item>aardvark</item>

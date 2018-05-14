@@ -22,8 +22,6 @@ type Path interface {
 	AddTag(tag Tag)
 }
 
-type Rules map[string]Expansion
-
 // An expansion is any part of a grammar that can
 // match a string
 type Expansion interface {

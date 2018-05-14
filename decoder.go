@@ -16,6 +16,8 @@ var (
 	EmptyRuleRefUri    = errors.New("rulerefs must have a non-zero uri")
 )
 
+type Rules map[string]Expansion
+
 type Grammar struct {
 	Root  Expansion
 	rules Rules
