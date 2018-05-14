@@ -27,16 +27,17 @@ func TestParseXml(t *testing.T) {
 
 	assert.Nil(err)
 	assert.Equal("", prefix)
+	out, err := processExpansion(seq)
+	assert.Nil(err)
+	assert.Equal("i am an antler", out)
 
-	processor := new(SimpleProcessor)
-
-	seq.AppendToProcessor(processor)
-
-	out, err := processor.GetString()
+	prefix, seq, err = g.Root.Consume("i am an aardvark")
 
 	assert.Nil(err)
-
-	assert.Equal("i am an antler", out)
+	assert.Equal("", prefix)
+	out, err = processExpansion(seq)
+	assert.Nil(err)
+	assert.Equal("i am an aardvark", out)
 
 	_, _, err = g.Root.Consume("i am an")
 	assert.Equal(PrefixOnly, err)
@@ -46,4 +47,11 @@ func TestParseXml(t *testing.T) {
 
 	_, _, err = g.Root.Consume("i am a human")
 	assert.Equal(NoMatch, err)
+}
+
+func processExpansion(exp Expansion) (string, error) {
+	processor := new(SimpleProcessor)
+	exp.AppendToProcessor(processor)
+
+	return processor.GetString()
 }
