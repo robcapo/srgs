@@ -19,7 +19,7 @@ func TestParseXml(t *testing.T) {
 	</rule>
 </grammar>
 `
-	p := new(Parser)
+	p := NewParser()
 	err := p.LoadXml(xml)
 	assert.Nil(err)
 
