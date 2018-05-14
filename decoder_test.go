@@ -1,4 +1,4 @@
-package main
+package srgs
 
 import (
 	"github.com/stretchr/testify/assert"
