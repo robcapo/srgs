@@ -187,6 +187,13 @@ func BenchmarkDigits(b *testing.B) {
 	}
 }
 
+func BenchmarkParse(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		g := NewGrammar()
+		g.LoadXml(digitsXml)
+	}
+}
+
 func TestDigits(t *testing.T) {
 	assert := assert.New(t)
 

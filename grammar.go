@@ -37,23 +37,7 @@ func (r RuleRef) Consume(str string) (string, Sequence, error) {
 		return str, seq, err
 	}
 
-	preProcess := Tag(fmt.Sprintf(`
-rules.%s = {};
-
-if (root == undefined) {
-	root = rules.%s;
-}
-
-(function() {
-	var out;
-`, r.ruleId, r.ruleId))
-
-	postProcess := Tag(fmt.Sprintf(`
-	rules.%s.out = out;
-})();
-`, r.ruleId))
-
-	return str, Sequence{preProcess, seq, postProcess}, nil
+	return str, Sequence{PreProcessTag(r.ruleId), seq, PostProcessTag(r.ruleId)}, nil
 }
 func (r RuleRef) AppendToProcessor(p Processor) {}
 
@@ -120,9 +104,9 @@ func (i Item) consume(str string, min int, max int, seq Sequence) (string, Seque
 type Sequence []Expansion
 
 func (s Sequence) Consume(str string) (string, Sequence, error) {
-	out := make([]Expansion, 0)
+	out := make([]Expansion, 0, len(s))
 
-	var seq []Expansion
+	var seq Expansion
 	var err error
 	for _, e := range s {
 		str, seq, err = e.Consume(str)
@@ -131,7 +115,7 @@ func (s Sequence) Consume(str string) (string, Sequence, error) {
 			return str, out, err
 		}
 
-		out = append(out, seq...)
+		out = append(out, seq)
 	}
 
 	return str, out, nil
@@ -171,3 +155,28 @@ type Tag string
 
 func (t Tag) Consume(str string) (string, Sequence, error) { return str, []Expansion{t}, nil }
 func (t Tag) AppendToProcessor(p Processor)                { p.AppendTag(string(t)) }
+
+
+type PreProcessTag string
+func (t PreProcessTag) Consume(str string) (string, Sequence, error) { return str, []Expansion{t}, nil }
+func (t PreProcessTag) AppendToProcessor(p Processor) {
+	p.AppendTag(fmt.Sprintf(`
+rules.%s = {};
+
+if (root == undefined) {
+	root = rules.%s;
+}
+
+(function() {
+	var out;
+`, string(t), string(t)))
+}
+
+type PostProcessTag string
+func (t PostProcessTag) Consume(str string) (string, Sequence, error) { return str, []Expansion{t}, nil }
+func (t PostProcessTag) AppendToProcessor(p Processor) {
+	p.AppendTag(fmt.Sprintf(`
+	rules.%s.out = out;
+})();
+`, string(t)))
+}
