@@ -38,6 +38,15 @@ type Expansion interface {
 	AppendToProcessor(processor Processor)
 }
 
+type RuleRef struct {
+	rule *Expansion
+}
+
+func (r RuleRef) Consume(str string) (string, Sequence, error) {
+	return (*r.rule).Consume(str)
+}
+func (r RuleRef) AppendToProcessor(p Processor) {}
+
 type Alternative []Item
 
 func (a Alternative) Consume(str string) (string, Sequence, error) {
