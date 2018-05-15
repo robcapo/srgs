@@ -23,6 +23,7 @@ type Expansion interface {
 	// - NoMatch if the string does not match the expansion at all
 	Consume(str string) (string, Sequence, error)
 	ConsumeStack(str string, stack *stack.Stack) (string, int, error)
+	Match(str string) (string, error)
 	AppendToProcessor(processor Processor)
 }
 
@@ -31,6 +32,9 @@ type RuleRef struct {
 	ruleId string
 }
 
+func (r RuleRef) Match(str string) (string, error) {
+	return (*r.rule).Match(str)
+}
 func (r RuleRef) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	PreProcessTag(r.ruleId).ConsumeStack(str, stack)
 	out, p, err := (*r.rule).ConsumeStack(str, stack)
@@ -51,6 +55,21 @@ func (r RuleRef) AppendToProcessor(p Processor) {}
 
 type Alternative []Item
 
+func (a Alternative) Match(str string) (string, error) {
+	outErr := NoMatch
+	for _, alt := range a {
+		str, err := alt.Match(str)
+
+		if err == nil {
+			return str, nil
+		}
+
+		if err == PrefixOnly {
+			outErr = PrefixOnly
+		}
+	}
+	return "", outErr
+}
 func (a Alternative) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	outErr := NoMatch
 	for _, alt := range a {
@@ -92,6 +111,26 @@ type Item struct {
 	repeatMax int
 }
 
+func (i Item) Match(str string) (string, error) {
+	return i.match(str, i.repeatMin, i.repeatMax)
+}
+func (i Item) match(str string, min, max int) (string, error) {
+	if max == 0 {
+		return str, nil
+	}
+
+	outStr, err := i.Sequence.Match(str)
+
+	if err != nil {
+		if min <= 0 {
+			return str, nil
+		}
+
+		return "", err
+	}
+
+	return i.match(outStr, min - 1, max - 1)
+}
 func (i Item) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	return i.consumeStack(str, stack, i.repeatMin, i.repeatMax)
 }
@@ -150,6 +189,18 @@ func (i Item) consume(str string, min int, max int, seq Sequence) (string, Seque
 
 type Sequence []Expansion
 
+func (s Sequence) Match(str string) (string, error) {
+	var err error
+	for _, e := range s {
+		str, err = e.Match(str)
+
+		if err != nil {
+			return str, err
+		}
+	}
+
+	return str, nil
+}
 func (s Sequence) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	var err error
 	var pushes, p int
@@ -194,6 +245,25 @@ func (s Sequence) AppendToProcessor(p Processor) {
 
 type Token string
 
+func (t Token) Match(str string) (string, error) {
+	if strings.HasPrefix(string(t), str) && len(string(t)) > len(str) {
+		return "", PrefixOnly
+	}
+
+	if strings.HasPrefix(str, string(t)) {
+		str = str[len(t):]
+
+		if len(str) == 0 {
+			return "", nil
+		}
+
+		if str[0] == ' ' {
+			return str[1:], nil
+		}
+	}
+
+	return "", NoMatch
+}
 func (t Token) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	if strings.HasPrefix(string(t), str) && len(string(t)) > len(str) {
 		return "", 0, PrefixOnly
@@ -238,6 +308,7 @@ func (t Token) AppendToProcessor(p Processor) { p.AppendString(string(t)) }
 
 type Tag string
 
+func (t Tag) Match(str string) (string, error) { return str, nil }
 func (t Tag) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	stack.Push(t)
 	return str, 1, nil
@@ -250,6 +321,7 @@ func (t Tag) AppendToProcessor(p Processor)                {
 
 
 type PreProcessTag string
+func (t PreProcessTag) Match(str string) (string, error) { return str, nil }
 func (t PreProcessTag) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	stack.Push(t)
 	return str, 1, nil
@@ -270,6 +342,7 @@ if (root == undefined) {
 }
 
 type PostProcessTag string
+func (t PostProcessTag) Match(str string) (string, error) { return str, nil }
 func (t PostProcessTag) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	stack.Push(t)
 	return str, 1, nil

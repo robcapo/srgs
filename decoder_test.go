@@ -335,39 +335,60 @@ func BenchmarkDigitsOne(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkDigits(b, g, "one")
+	benchmarkConsumeStack(b, g, "one")
 }
 func BenchmarkDigitsOneTwo(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkDigits(b, g, "one two")
+	benchmarkConsumeStack(b, g, "one two")
 }
 func BenchmarkDigitsOneTwoThree(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkDigits(b, g, "one two three")
+	benchmarkConsumeStack(b, g, "one two three")
 }
 func BenchmarkDigitsOneTwoThreeFour(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkDigits(b, g, "one two three four")
+	benchmarkConsumeStack(b, g, "one two three four")
 }
 func BenchmarkDigitsOneTwoThreeFourFive(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkDigits(b, g, "one two three four five")
+	benchmarkConsumeStack(b, g, "one two three four five")
 }
 
 
-func benchmarkDigits(b *testing.B, g *Grammar, prefix string) {
+func benchmarkConsumeStack(b *testing.B, g *Grammar, prefix string) {
 	for i := 0; i < b.N; i++ {
 		stk := stack.New()
 		g.Root.ConsumeStack(prefix, stk)
 	}
+}
+
+func BenchmarkDigitsMatchOneTwo(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two")
+}
+
+var (
+	outStr string
+	outErr error
+)
+func benchmarkMatch(b *testing.B, g *Grammar, prefix string) {
+	var str string
+	var err error
+	for i := 0; i < b.N; i++ {
+		str, err = g.Root.Match(prefix)
+	}
+	outStr = str
+	outErr = err
 }
 
 func BenchmarkParse(b *testing.B) {
