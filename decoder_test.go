@@ -376,6 +376,12 @@ func BenchmarkDigitsMatchOneTwo(b *testing.B) {
 
 	benchmarkMatch(b, g, "one two")
 }
+func BenchmarkDigitsMatchOneTwoThreeFourFive(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two three four five")
+}
 
 var (
 	outStr string
