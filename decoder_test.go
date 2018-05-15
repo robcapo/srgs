@@ -3,72 +3,225 @@ package srgs
 import (
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"github.com/golang-collections/collections/stack"
 )
 
 var digitsXml = `<?xml version="1.0" encoding="UTF-8" ?>
-<grammar xmlns="http://www.w3.org/2001/06/grammar" version="1.0" xml:lang="en-US" root="example" tag-format="swi-semantics/1.0">
-	<rule id="example">
-		my number is <ruleref uri="#triplet" /><tag>out = rules.triplet.out;</tag>
-	</rule>
+<grammar version="1.0" xml:lang="en-US" root="combined" mode="voice" tag-format="swi-semantics/1.0">
+  <rule id="combined" scope="public">
+	<item>
+	  <ruleref uri="#quintet" />
+	  <tag>out= rules.quintet.out;</tag>
+	</item>
+  </rule>
+  
+  <rule id="quintet">
+	<one-of>
+	  <item>
+		<ruleref uri="#digit" />
+		<tag>out = rules.digit.out</tag>
+		<ruleref uri="#quartet" />
+		<tag>out = out + rules.quartet.out</tag>
+	  </item>
+	  <item>
+		<ruleref uri="#quartet" />
+		<tag>out = rules.quartet.out</tag>
+		<ruleref uri="#digit" />
+		<tag>out = out + rules.digit.out</tag>
+	  </item>
+	  <item>
+		<ruleref uri="#triplet" />
+		<tag>out = rules.triplet.out</tag>
+		<ruleref uri="#doublet" />
+		<tag>out = out + rules.doublet.out</tag>
+	  </item>
+	  <item>
+		<ruleref uri="#doublet" />
+		<tag>out = rules.doublet.out</tag>
+		<ruleref uri="#triplet" />
+		<tag>out = out + rules.triplet.out</tag>
+	  </item>
+	</one-of>
+  </rule>
+  
+  <rule id="quartet">
+  	<one-of>
+	<item>
+	  <ruleref uri="#digit" />
+	  <tag>out = rules.digit.out;</tag>
+	  thousand
+	  <tag>out = rules.digit.out + "000";</tag>
+	</item>
+	<!-- 1 + 3 -->
+	<item>
+	  <ruleref uri="#digit" />
+	  <tag>out = rules.digit.out</tag>
+	  <ruleref uri="#triplet" />
+	  <tag>out = out + rules.triplet.out</tag>
+	</item>
+	<item>
+	  <ruleref uri="#triplet" />
+	  <tag>out = rules.triplet.out</tag>
+	  <ruleref uri="#digit" />
+	  <tag>out = out + rules.digit.out</tag>
+	</item>
+	<!-- 2 + 2 -->
+	<item repeat="2">
+	  <ruleref uri="#doublet" />
+	  <tag>out = out ? out + rules.doublet.out : rules.doublet.out</tag>
+	</item>
+	<!-- quadruple 1 -->
+	<item>
+	  <ruleref uri="#four" />
+	  <ruleref uri="#digit" />
+	  <tag>out = "" + rules.digit.out + rules.digit.out + rules.digit.out + rules.digit.out</tag>
+	</item>
+	</one-of>
+  </rule>
+  
+  <rule id="four" scope="public">
+	 <one-of>
+	  <item>quad</item>
+	  <item>quadruple</item>
+	 </one-of>
+  </rule>
+  
+  <rule id="triplet">
+	<one-of>
+	  <item>
+		<ruleref uri="#doublet"/>
+		<tag>out = rules.doublet.out</tag>
+		<ruleref uri="#digit" />
+		<tag>out = out + rules.digit.out</tag>
+	  </item>
 
-	<rule id="triplet">
-		<one-of>
-			<item>
-				<ruleref uri="#doublet" />
-				<ruleref uri="#digit" />
-				<tag>out = rules.doublet.out + rules.digit.out;</tag>
-			</item>
-			<item>
-				<ruleref uri="#digit" />
-				<ruleref uri="#doublet" />
-				<tag>out = rules.digit.out + rules.doublet.out;</tag>
-			</item>
-			<item repeat="3">
-				<ruleref uri="#digit" />
-				<tag>out = out ? out + rules.digit.out : rules.digit.out;</tag>
-			</item>
-			<item>
-				triple
-				<ruleref uri="#digit" />
-				<tag>out = rules.digit.out + rules.digit.out + rules.digit.out;</tag>
-			</item>
-		</one-of>
-	</rule>
+	  <item>
+		<ruleref uri="#digit"/>
+		<tag>out = rules.digit.out</tag>
+		<ruleref uri="#doublet" />
+		<tag>out = out + rules.doublet.out</tag>
+	  </item>
 
-	<rule id="doublet">
+	  <item>
+	  	triple <ruleref uri="#digit" /><tag>out = rules.digit.out + rules.digit.out + rules.digit.out</tag>
+	  </item>
+	</one-of>
+  </rule>
+  
+  
+  <rule id="doublet">
+	<one-of>
+	  <item>
+		<ruleref uri="#digit" />
+		<tag>out = rules.digit.out</tag>
+		<ruleref uri="#digit" />
+		<tag>out = out + rules.digit.out</tag>
+	  </item>
+	  
+	  <item>
+		double <ruleref uri="#digit" />
+		<tag>out = rules.digit.out + rules.digit.out</tag>
+	  </item>
+	  
+	  <item>
 		<one-of>
-			<item>ten <tag>out = '10';</tag></item>
-			<item>eleven <tag>out = '11';</tag></item>
-			<item>twelve <tag>out = '12';</tag></item>
-			<item>thirteen <tag>out = '13';</tag></item>
-			<item>fourteen <tag>out = '14';</tag></item>
-			<item>fifteen <tag>out = '15';</tag></item>
-			<item>sixteen <tag>out = '16';</tag></item>
-			<item>seventeen <tag>out = '17';</tag></item>
-			<item>eighteen <tag>out = '18';</tag></item>
-			<item>nineteen <tag>out = '19';</tag></item>
-			<item repeat="2">
-				<ruleref uri="#digit" />
-				<tag>out = out ? out + rules.digit.out : rules.digit.out;</tag>
-			</item>
+		  <item>ten <tag>out = "10";</tag></item>
+		  <item>eleven <tag>out = "11";</tag></item>
+		  <item>twelve <tag>out = "12";</tag></item>
+		  <item>thirteen <tag>out = "13";</tag></item>
+		  <item>fourteen <tag>out = "14";</tag></item>
+		  <item>fifteen <tag>out = "15";</tag></item>
+		  <item>sixteen <tag>out = "16";</tag></item>
+		  <item>seventeen <tag>out = "17";</tag></item>
+		  <item>eighteen <tag>out = "18";</tag></item>
+		  <item>nineteen <tag>out = "19";</tag></item>
 		</one-of>
-	</rule>
-
-	<rule id="digit">
-		<one-of>
-			<item>one <tag>out = '1';</tag></item>
-			<item>two <tag>out = '2';</tag></item>
-			<item>three <tag>out = '3';</tag></item>
-			<item>four <tag>out = '4';</tag></item>
-			<item>five <tag>out = '5';</tag></item>
-			<item>six <tag>out = '6';</tag></item>
-			<item>seven <tag>out = '7';</tag></item>
-			<item>eight <tag>out = '8';</tag></item>
-			<item>nine <tag>out = '9';</tag></item>
-			<item>zero <tag>out = '0';</tag></item>
-			<item>oh <tag>out = '0';</tag></item>
-		</one-of>
-	</rule>
+	  </item>
+	  
+	  <item>
+		<ruleref uri="#tens" />
+		<tag>out = rules.tens.tens;</tag>
+		<ruleref uri="#ones" />
+		<tag>out = out + rules.ones.ones;</tag>
+	  </item>
+	</one-of>
+  </rule>
+  
+  <rule id="tens">
+	<one-of>
+	  <item>twenty <tag>out.tens = "2"; out="20";</tag></item>
+	  <item>thirty <tag>out.tens = "3"; out="30";</tag></item>
+	  <item>forty <tag>out.tens = "4"; out="40";</tag></item>
+	  <item>fifty <tag>out.tens = "5"; out="50";</tag></item>
+	  <item>sixty <tag>out.tens = "6"; out="60";</tag></item>
+	  <item>seventy <tag>out.tens = "7"; out="70";</tag></item>
+	  <item>eighty <tag>out.tens = "8"; out="80";</tag></item>
+	  <item>ninety <tag>out.tens = "9"; out="90";</tag></item>
+	</one-of>
+  </rule>
+  
+  <rule id="ones">
+	<one-of>
+	  <item>one <tag>out.ones = "1";</tag></item>
+	  <item>two <tag>out.ones = "2";</tag></item>
+	  <item>three <tag>out.ones = "3";</tag></item>
+	  <item>four <tag>out.ones = "4";</tag></item>
+	  <item>five <tag>out.ones = "5";</tag></item>
+	  <item>six <tag>out.ones = "6";</tag></item>
+	  <item>seven <tag>out.ones = "7";</tag></item>
+	  <item>eight <tag>out.ones = "8";</tag></item>
+	  <item>nine <tag>out.ones = "9";</tag></item>
+	</one-of>
+  </rule>
+  
+  <rule id="digit">
+	<one-of>
+	  <item weight="0.1">
+		oh
+		<tag>out='0';</tag>
+	  </item>
+	  <item>
+		zero
+		<tag>out='0';</tag>
+	  </item>
+	  <item>
+		one
+		<tag>out='1';</tag>
+	  </item>
+	  <item>
+		two
+		<tag>out='2';</tag>
+	  </item>
+	  <item>
+		three
+		<tag>out='3';</tag>
+	  </item>
+	  <item>
+		four
+		<tag>out='4';</tag>
+	  </item>
+	  <item>
+		five
+		<tag>out='5';</tag>
+	  </item>
+	  <item>
+		six
+		<tag>out='6';</tag>
+	  </item>
+	  <item>
+		seven
+		<tag>out='7';</tag>
+	  </item>
+	  <item>
+		eight
+		<tag>out='8';</tag>
+	  </item>
+	  <item>
+		nine
+		<tag>out='9';</tag>
+	  </item>
+	</one-of>
+  </rule>
 </grammar>
 `
 
@@ -178,35 +331,42 @@ func TestSisr(t *testing.T) {
 	assert.Equal("15", inst)
 }
 
-func BenchmarkDigitsMy(b *testing.B) {
+func BenchmarkDigitsOne(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkDigits(b, g, "my")
+	benchmarkDigits(b, g, "one")
 }
-func BenchmarkDigitsMyNumber(b *testing.B) {
+func BenchmarkDigitsOneTwo(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkDigits(b, g, "my number")
+	benchmarkDigits(b, g, "one two")
 }
-func BenchmarkDigitsMyNumberIs(b *testing.B) {
+func BenchmarkDigitsOneTwoThree(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkDigits(b, g, "my number is")
+	benchmarkDigits(b, g, "one two three")
 }
-func BenchmarkDigitsMyNumberIsOneTwoThree(b *testing.B) {
+func BenchmarkDigitsOneTwoThreeFour(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkDigits(b, g, "my number is one two three")
+	benchmarkDigits(b, g, "one two three four")
+}
+func BenchmarkDigitsOneTwoThreeFourFive(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkDigits(b, g, "one two three four five")
 }
 
 
 func benchmarkDigits(b *testing.B, g *Grammar, prefix string) {
 	for i := 0; i < b.N; i++ {
-		g.Root.Consume(prefix)
+		stk := stack.New()
+		g.Root.ConsumeStack(prefix, stk)
 	}
 }
 
@@ -227,30 +387,32 @@ func TestDigits(t *testing.T) {
 		return
 	}
 
-	_, seq, err := g.Root.Consume("my number is one two three")
+	stk := stack.New()
+	_, _, err = g.Root.ConsumeStack("one two three four five", stk)
 
 	if !assert.Nil(err) {
 		return
 	}
 
 	p := new(SISRProcessor)
-	seq.AppendToProcessor(p)
+	p.ProcessStack(stk)
 
-	assert.Equal("my number is one two three", p.GetInterpretation())
+	assert.Equal("one two three four five", p.GetInterpretation())
 
 	out, err := p.GetInstance()
 	assert.Nil(err)
-	assert.Equal("123", out)
+	assert.Equal("12345", out)
 
-	_, seq, err = g.Root.Consume("my number is triple three")
+	stk = stack.New()
+	_, _, err = g.Root.ConsumeStack("triple three four five", stk)
 
 	p = new(SISRProcessor)
-	seq.AppendToProcessor(p)
+	p.ProcessStack(stk)
 
 	assert.Nil(err)
 
 	out, err = p.GetInstance()
 	assert.Nil(err)
 
-	assert.Equal("333", out)
+	assert.Equal("33345", out)
 }
