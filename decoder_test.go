@@ -11,7 +11,7 @@ var digitsXml = `<?xml version="1.0" encoding="UTF-8" ?>
   <rule id="combined" scope="public">
 	<item>
 	  <ruleref uri="#quintet" />
-	  <tag>out= rules.quintet.out;</tag>
+	  <tag>out = rules.quintet.out;</tag>
 	</item>
   </rule>
   
