@@ -22,8 +22,23 @@ type Expansion interface {
 	// - PrefixOnly if the entire text is only a prefix in the expansion.
 	// - NoMatch if the string does not match the expansion at all
 	Consume(str string) (string, Sequence, error)
+
+	// Does the same thing as Consume, but uses a preallocated stack to push the path onto
+	// this saves on allocating a Sequence for each Expansion in the path
 	ConsumeStack(str string, stack *stack.Stack) (string, int, error)
+
+	// Check if the expansion matches a certain string. Will return the consumed version of the string
+	// as well as an error value of either nil (perfect match), PrefixOnly (str was a prefix), or
+	// NoMatch (str did not match)
 	Match(str string) (string, error)
+
+	// Check if str is a prefix of the Expansion only. This is an optimized version of Match, with the caveat
+	// that it does not distinguish between a prefix and a perfect match. Prefix search decoders can leverage
+	// this method to very quickly check if a candidate utterance is a prefix of the grammar.
+	MatchPrefix(str string) (string, error)
+
+	// Append this expansion to a processor. This will be enable the Processor to provide the output for a
+	// given path
 	AppendToProcessor(processor Processor)
 }
 
@@ -34,6 +49,9 @@ type RuleRef struct {
 
 func (r RuleRef) Match(str string) (string, error) {
 	return (*r.rule).Match(str)
+}
+func (r RuleRef) MatchPrefix(str string) (string, error) {
+	return (*r.rule).MatchPrefix(str)
 }
 func (r RuleRef) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	PreProcessTag(r.ruleId).ConsumeStack(str, stack)
@@ -70,6 +88,18 @@ func (a Alternative) Match(str string) (string, error) {
 	}
 	return "", outErr
 }
+func (a Alternative) MatchPrefix(str string) (string, error) {
+	for _, alt := range a {
+		str, err := alt.MatchPrefix(str)
+
+		if err == nil {
+			return str, nil
+		}
+	}
+
+	return "", NoMatch
+}
+
 func (a Alternative) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	outErr := NoMatch
 	for _, alt := range a {
@@ -131,6 +161,9 @@ func (i Item) match(str string, min, max int) (string, error) {
 
 	return i.match(outStr, min - 1, max - 1)
 }
+
+func (i Item) MatchPrefix(str string) (string, error) { return i.Match(str) }
+
 func (i Item) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	return i.consumeStack(str, stack, i.repeatMin, i.repeatMax)
 }
@@ -201,6 +234,8 @@ func (s Sequence) Match(str string) (string, error) {
 
 	return str, nil
 }
+func (s Sequence) MatchPrefix(str string) (string, error) { return s.Match(str) }
+
 func (s Sequence) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	var err error
 	var pushes, p int
@@ -264,6 +299,26 @@ func (t Token) Match(str string) (string, error) {
 
 	return "", NoMatch
 }
+
+func (t Token) MatchPrefix(str string) (string, error) {
+	if strings.HasPrefix(string(t), str) {
+		return "", nil
+	}
+
+	if strings.HasPrefix(str, string(t)) {
+		str = str[len(t):]
+
+		if len(str) == 0 {
+			return "", nil
+		}
+
+		if str[0] == ' ' {
+			return str[1:], nil
+		}
+	}
+
+	return "", NoMatch
+}
 func (t Token) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	if strings.HasPrefix(string(t), str) && len(string(t)) > len(str) {
 		return "", 0, PrefixOnly
@@ -309,6 +364,7 @@ func (t Token) AppendToProcessor(p Processor) { p.AppendString(string(t)) }
 type Tag string
 
 func (t Tag) Match(str string) (string, error) { return str, nil }
+func (t Tag) MatchPrefix(str string) (string, error) { return str, nil }
 func (t Tag) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	stack.Push(t)
 	return str, 1, nil
@@ -321,6 +377,7 @@ func (t Tag) AppendToProcessor(p Processor)                {
 
 
 type PreProcessTag string
+func (t PreProcessTag) MatchPrefix(str string) (string, error) { return str, nil }
 func (t PreProcessTag) Match(str string) (string, error) { return str, nil }
 func (t PreProcessTag) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	stack.Push(t)
@@ -343,6 +400,7 @@ if (root == undefined) {
 
 type PostProcessTag string
 func (t PostProcessTag) Match(str string) (string, error) { return str, nil }
+func (t PostProcessTag) MatchPrefix(str string) (string, error) { return str, nil }
 func (t PostProcessTag) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	stack.Push(t)
 	return str, 1, nil
