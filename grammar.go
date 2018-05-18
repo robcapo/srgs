@@ -162,7 +162,24 @@ func (i Item) match(str string, min, max int) (string, error) {
 	return i.match(outStr, min - 1, max - 1)
 }
 
-func (i Item) MatchPrefix(str string) (string, error) { return i.Match(str) }
+func (i Item) MatchPrefix(str string) (string, error) { return i.matchPrefix(str, i.repeatMin, i.repeatMax) }
+func (i Item) matchPrefix(str string, min, max int) (string, error) {
+	if max == 0 {
+		return str, nil
+	}
+
+	outStr, err := i.Sequence.MatchPrefix(str)
+
+	if err != nil {
+		if min <= 0 {
+			return str, nil
+		}
+
+		return "", err
+	}
+
+	return i.matchPrefix(outStr, min - 1, max - 1)
+}
 
 func (i Item) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	return i.consumeStack(str, stack, i.repeatMin, i.repeatMax)
@@ -234,7 +251,18 @@ func (s Sequence) Match(str string) (string, error) {
 
 	return str, nil
 }
-func (s Sequence) MatchPrefix(str string) (string, error) { return s.Match(str) }
+func (s Sequence) MatchPrefix(str string) (string, error) {
+	var err error
+	for _, e := range s {
+		str, err = e.MatchPrefix(str)
+
+		if err != nil {
+			return str, err
+		}
+	}
+
+	return str, nil
+}
 
 func (s Sequence) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 	var err error

@@ -396,6 +396,46 @@ func benchmarkMatch(b *testing.B, g *Grammar, prefix string) {
 	outStr = str
 	outErr = err
 }
+func BenchmarkDigitsMatchPrefixOne(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatchPrefix(b, g, "one")
+}
+func BenchmarkDigitsMatchPrefixOneTwo(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatchPrefix(b, g, "one two")
+}
+func BenchmarkDigitsMatchPrefixOneTwoThree(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatchPrefix(b, g, "one two three")
+}
+func BenchmarkDigitsMatchPrefixOneTwoThreeFour(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatchPrefix(b, g, "one two three four")
+}
+func BenchmarkDigitsMatchPrefixOneTwoThreeFourFive(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatchPrefix(b, g, "one two three four five")
+}
+
+func benchmarkMatchPrefix(b *testing.B, g *Grammar, prefix string) {
+	var str string
+	var err error
+	for i := 0; i < b.N; i++ {
+		str, err = g.Root.MatchPrefix(prefix)
+	}
+	outStr = str
+	outErr = err
+}
 
 func BenchmarkParse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
