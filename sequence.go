@@ -3,7 +3,7 @@ package srgs
 type Sequence struct {
 	exps []Expansion
 
-	str string
+	str  string
 	mode MatchMode
 
 	nextInd int
@@ -12,39 +12,38 @@ type Sequence struct {
 func (s *Sequence) Match(str string, mode MatchMode) {
 	s.str = str
 	s.mode = mode
+
 	s.nextInd = 0
+
+	s.exps[0].Match(str, mode)
 }
 
 func (s *Sequence) Next() (string, error) {
-	str, err :=  s.next(s.str, s.nextInd)
+	if s.nextInd < 0 {
+		return "", NoMatch
+	}
 
-	if err != nil {
-		s.nextInd--
+	var str string
+	var err error
 
-		if s.nextInd < 0 {
-			return str, err
+	for i := s.nextInd; i < len(s.exps); i++ {
+		str, err = s.exps[i].Next()
+
+		if err != nil {
+			s.nextInd--
+			return s.Next()
 		}
 
-		return s.Next()
+		s.nextInd = i + 1
+
+		if i+1 < len(s.exps) {
+			s.exps[i+1].Match(str, s.mode)
+		}
 	}
 
 	return str, err
 }
 
-func (s *Sequence) next(str string, i int) (string, error) {
-	if i == len(s.exps) {
-		return str, nil
-	}
-
-	s.exps[i].Match(str, s.mode)
-	str, err := s.exps[i].Next()
-	if err == nil {
-		s.nextInd = i
-		return s.next(str, i + 1)
-	}
-
-	return str, err
-}
 //
 //func (s Sequence) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 //	var err error
@@ -70,4 +69,3 @@ func (s *Sequence) AppendToProcessor(p Processor) {
 		exp.AppendToProcessor(p)
 	}
 }
-

@@ -1,19 +1,41 @@
 package srgs
 
-//
-//type Tag string
-//
-//func (t Tag) Match(str string) {}
-//func (t Tag) MatchPrefix(str string) (string, error) { return str, nil }
+type Tag struct {
+	text string
+
+	match  string
+	called bool
+}
+
+func NewTag(str string) *Tag {
+	return &Tag{text: str}
+}
+
+func (t *Tag) Match(str string, mode MatchMode) {
+	t.text = str
+	t.called = false
+}
+
+func (t *Tag) Next() (string, error) {
+	if t.called == true {
+		return "", NoMatch
+	}
+
+	t.called = true
+
+	return t.match, nil
+}
+func (t *Tag) AppendToProcessor(p Processor) {
+	p.AppendTag(t.text)
+}
+
 //func (t Tag) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
 //	stack.Push(t)
 //	return str, 1, nil
 //}
 //
 //func (t Tag) Consume(str string) (string, Sequence, error) { return str, []Expansion{t}, nil }
-//func (t Tag) AppendToProcessor(p Processor)                {
-//	p.AppendTag(string(t))
-//}
+
 //
 //
 //type PreProcessTag string
