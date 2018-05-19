@@ -51,6 +51,26 @@ func TestSequenceWithMultipleAlternatives(t *testing.T) {
 	assert.True(g.HasMatch("my name is kaustav"))
 }
 
+func TestDigitsPrefix(t *testing.T) {
+	assert := assert.New(t)
+
+	g := NewGrammar()
+	err := g.LoadXml(digitsXml)
+
+	if !assert.Nil(err) {
+		return
+	}
+
+	assert.True(g.HasPrefix("one two"))
+	assert.True(g.HasPrefix("one two three four"))
+	assert.True(g.HasPrefix("two"))
+	assert.True(g.HasPrefix("three five four one"))
+	assert.True(g.HasPrefix("two three four five"))
+	assert.True(g.HasPrefix("six five four three two one"))
+	assert.True(g.HasPrefix("on"))
+	assert.False(g.HasPrefix("fix"))
+}
+
 //func TestSisr(t *testing.T) {
 //	assert := assert.New(t)
 //
@@ -155,26 +175,23 @@ func TestSequenceWithMultipleAlternatives(t *testing.T) {
 //	benchmarkMatch(b, g, "one two three four five")
 //}
 //
-//var (
-//	outStr string
-//	outErr error
-//)
+//var match bool
+//
 //func benchmarkMatch(b *testing.B, g *Grammar, prefix string) {
-//	var str string
-//	var err error
+//	var out bool
 //	for i := 0; i < b.N; i++ {
-//		str, err = g.Root.Match(prefix)
+//		out = g.HasMatch(prefix)
 //	}
-//	outStr = str
-//	outErr = err
+//
+//	match = out
 //}
-
-func BenchmarkParse(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		g := NewGrammar()
-		g.LoadXml(digitsXml)
-	}
-}
+//
+//func BenchmarkParse(b *testing.B) {
+//	for i := 0; i < b.N; i++ {
+//		g := NewGrammar()
+//		g.LoadXml(digitsXml)
+//	}
+//}
 
 //func TestDigits(t *testing.T) {
 //	assert := assert.New(t)
