@@ -9,6 +9,17 @@ type Sequence struct {
 	nextInd int
 }
 
+func (s *Sequence) Copy(g *Grammar) Expansion {
+	out := new(Sequence)
+	out.exps = make([]Expansion, len(s.exps))
+
+	for ind, e := range s.exps {
+		out.exps[ind] = e.Copy(g)
+	}
+
+	return out
+}
+
 func (s *Sequence) Match(str string, mode MatchMode) {
 	s.str = str
 	s.mode = mode
@@ -21,6 +32,12 @@ func (s *Sequence) Match(str string, mode MatchMode) {
 func (s *Sequence) Next() (string, error) {
 	if s.nextInd < 0 {
 		return "", NoMatch
+	}
+
+	if s.nextInd == len(s.exps) {
+		if s.mode != ModePrefix {
+			return "", NoMatch
+		}
 	}
 
 	var str string

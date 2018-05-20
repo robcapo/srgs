@@ -35,6 +35,10 @@ var digitsXml = `<?xml version="1.0" encoding="UTF-8" ?>
 		<ruleref uri="#triplet" />
 		<tag>out = out + rules.triplet.out</tag>
 	  </item>
+      <item>
+		four <ruleref uri="#digit" />
+		<tag>out = out + rule.digit.out + rule.digit.out + rule.digit.out + rule.digit.out;</tag>
+	  </item>
 	</one-of>
  </rule>
 

@@ -3,10 +3,14 @@ package srgs
 type Token struct {
 	token string
 
-	str string
+	str  string
 	mode MatchMode
 
 	called bool
+}
+
+func (t *Token) Copy(g *Grammar) Expansion {
+	return &Token{token: t.token}
 }
 
 func NewToken(str string) *Token {
@@ -106,4 +110,3 @@ func (t *Token) AppendToProcessor(p Processor) { p.AppendString(t.token) }
 //
 //	return "", nil, NoMatch
 //}
-

@@ -1,19 +1,27 @@
 package srgs
 
 type Item struct {
-	child Expansion
+	child     Expansion
 	repeatMin int
 	repeatMax int
 
-	str string
+	str  string
 	mode MatchMode
 
 	currentRepeat int
 }
 
+func (it *Item) Copy(g *Grammar) Expansion {
+	return &Item{
+		child:     it.child.Copy(g),
+		repeatMin: it.repeatMin,
+		repeatMax: it.repeatMax,
+	}
+}
+
 func NewItem(child Expansion, repeatMin, repeatMax int) *Item {
 	return &Item{
-		child: child,
+		child:     child,
 		repeatMin: repeatMin,
 		repeatMax: repeatMax,
 	}

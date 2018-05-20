@@ -51,6 +51,8 @@ type Expansion interface {
 
 	// Append this expansion to a processor. This will be enable the Processor to provide the output for a given path
 	AppendToProcessor(processor Processor)
+
+	Copy(g *Grammar) Expansion
 }
 
 type Grammar struct {
@@ -131,7 +133,7 @@ func (g *Grammar) LoadXml(xml string) error {
 
 		if refs, ok := g.ruleRefs[id]; ok {
 			for _, ref := range refs {
-				ref.rule = &exp
+				ref.rule = exp.Copy(g)
 			}
 
 			delete(g.ruleRefs, id)
@@ -152,7 +154,7 @@ func (g *Grammar) LoadXml(xml string) error {
 
 	g.Root = &RuleRef{
 		ruleId: rootId,
-		rule:   &root,
+		rule:   root,
 	}
 
 	return nil
@@ -200,7 +202,7 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 				out.exps = append(out.exps, ruleRef)
 
 				if rule, ok := g.rules[ruleRef.ruleId]; ok {
-					ruleRef.rule = &rule
+					ruleRef.rule = rule.Copy(g)
 				} else {
 					g.ruleRefs[ruleRef.ruleId] = append(g.ruleRefs[ruleRef.ruleId], ruleRef)
 				}

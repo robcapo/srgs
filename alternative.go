@@ -3,12 +3,23 @@ package srgs
 type Alternative struct {
 	items []Expansion
 
-	str string
+	str        string
 	currentInd int
 }
 
+func (a *Alternative) Copy(g *Grammar) Expansion {
+	out := new(Alternative)
+	out.items = make([]Expansion, len(a.items))
+
+	for ind, e := range a.items {
+		out.items[ind] = e.Copy(g)
+	}
+
+	return out
+}
+
 func NewAlternative(items ...Expansion) *Alternative {
-	return &Alternative{items:items}
+	return &Alternative{items: items}
 }
 
 func (a *Alternative) Match(str string, mode MatchMode) {

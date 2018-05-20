@@ -12,7 +12,7 @@ func NewTag(str string) *Tag {
 }
 
 func (t *Tag) Match(str string, mode MatchMode) {
-	t.text = str
+	t.match = str
 	t.called = false
 }
 
@@ -27,6 +27,9 @@ func (t *Tag) Next() (string, error) {
 }
 func (t *Tag) AppendToProcessor(p Processor) {
 	p.AppendTag(t.text)
+}
+func (t *Tag) Copy(g *Grammar) Expansion {
+	return &Tag{text: t.text}
 }
 
 //func (t Tag) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {

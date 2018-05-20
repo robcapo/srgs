@@ -62,13 +62,50 @@ func TestDigitsPrefix(t *testing.T) {
 	}
 
 	assert.True(g.HasPrefix("one two"))
-	assert.True(g.HasPrefix("one two three four"))
+	assert.True(g.HasPrefix("one two three four "))
 	assert.True(g.HasPrefix("two"))
 	assert.True(g.HasPrefix("three five four one"))
 	assert.True(g.HasPrefix("two three four five"))
-	assert.True(g.HasPrefix("six five four three two one"))
+	assert.True(g.HasPrefix("six five four three two two"))
 	assert.True(g.HasPrefix("on"))
 	assert.False(g.HasPrefix("fix"))
+}
+
+func TestDigitsMatch(t *testing.T) {
+	assert := assert.New(t)
+
+	g := NewGrammar()
+	err := g.LoadXml(digitsXml)
+
+	if !assert.Nil(err) {
+		return
+	}
+
+	assert.True(g.HasMatch("one two three four five"))
+}
+
+func BenchmarkDigitsMatchOneTwo(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two")
+}
+func BenchmarkDigitsMatchOneTwoThreeFourFive(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two three four five")
+}
+
+var match bool
+
+func benchmarkMatch(b *testing.B, g *Grammar, prefix string) {
+	var out bool
+	for i := 0; i < b.N; i++ {
+		out = g.HasPrefix(prefix)
+	}
+
+	match = out
 }
 
 //func TestSisr(t *testing.T) {
@@ -154,7 +191,6 @@ func TestDigitsPrefix(t *testing.T) {
 //	benchmarkConsumeStack(b, g, "one two three four five")
 //}
 //
-//
 //func benchmarkConsumeStack(b *testing.B, g *Grammar, prefix string) {
 //	for i := 0; i < b.N; i++ {
 //		stk := stack.New()
@@ -162,36 +198,12 @@ func TestDigitsPrefix(t *testing.T) {
 //	}
 //}
 
-//func BenchmarkDigitsMatchOneTwo(b *testing.B) {
-//	g := NewGrammar()
-//	g.LoadXml(digitsXml)
-//
-//	benchmarkMatch(b, g, "one two")
-//}
-//func BenchmarkDigitsMatchOneTwoThreeFourFive(b *testing.B) {
-//	g := NewGrammar()
-//	g.LoadXml(digitsXml)
-//
-//	benchmarkMatch(b, g, "one two three four five")
-//}
-//
-//var match bool
-//
-//func benchmarkMatch(b *testing.B, g *Grammar, prefix string) {
-//	var out bool
-//	for i := 0; i < b.N; i++ {
-//		out = g.HasMatch(prefix)
-//	}
-//
-//	match = out
-//}
-//
-//func BenchmarkParse(b *testing.B) {
-//	for i := 0; i < b.N; i++ {
-//		g := NewGrammar()
-//		g.LoadXml(digitsXml)
-//	}
-//}
+func BenchmarkParse(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		g := NewGrammar()
+		g.LoadXml(digitsXml)
+	}
+}
 
 //func TestDigits(t *testing.T) {
 //	assert := assert.New(t)
