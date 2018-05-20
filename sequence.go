@@ -35,9 +35,7 @@ func (s *Sequence) Next() (string, error) {
 	}
 
 	if s.nextInd == len(s.exps) {
-		if s.mode != ModePrefix {
-			return "", NoMatch
-		}
+		return "", NoMatch
 	}
 
 	var str string

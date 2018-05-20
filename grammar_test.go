@@ -66,7 +66,7 @@ func TestDigitsPrefix(t *testing.T) {
 	assert.True(g.HasPrefix("two"))
 	assert.True(g.HasPrefix("three five four one"))
 	assert.True(g.HasPrefix("two three four five"))
-	assert.True(g.HasPrefix("six five four three two two"))
+	assert.False(g.HasPrefix("six five four three two two"))
 	assert.True(g.HasPrefix("on"))
 	assert.False(g.HasPrefix("fix"))
 }
