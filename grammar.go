@@ -3,440 +3,295 @@ package srgs
 import (
 	"errors"
 	"fmt"
+	"github.com/beevik/etree"
+	"strconv"
 	"strings"
-	"github.com/golang-collections/collections/stack"
 )
 
-var NoMatch = errors.New("cannot consume string with token")
-var PrefixOnly = errors.New("string matched is a prefix")
+type MatchMode int
 
-// An expansion is any part of a grammar that can
-// match a string
+const (
+	ModePrefix MatchMode = iota
+	ModeExact
+)
+
+var (
+	NoMatch    = errors.New("cannot consume string with token")
+	PrefixOnly = errors.New("string matched is a prefix")
+)
+
+var (
+	InvalidGrammar     = errors.New("invalid grammar document")
+	NoRoot             = errors.New("no root present in grammar")
+	RootNotFound       = errors.New("unable to find root rule")
+	UnidentifiableRule = errors.New("rules must have an id")
+	EmptyRuleRefUri    = errors.New("rulerefs must have a non-empty uri")
+)
+
+// An expansion is any part of a grammar that can match a string
 type Expansion interface {
 	// Check if this expansion covers part or all of string `str`.
 	// Returns a consumed version of str, with the part that this expansion covers removed from the beginning.
-	// Returns a slice of Expansions that were involved in covering the string
+	// Uses a pre-allocated stack to push the Expansions involved in consuming the str
 	//
 	// May return two errors:
 	//
 	// - PrefixOnly if the entire text is only a prefix in the expansion.
 	// - NoMatch if the string does not match the expansion at all
-	Consume(str string) (string, Sequence, error)
+	//ConsumeStack(str string, stack *stack.Stack) (string, int, error)
 
-	// Does the same thing as Consume, but uses a preallocated stack to push the path onto
-	// this saves on allocating a Sequence for each Expansion in the path
-	ConsumeStack(str string, stack *stack.Stack) (string, int, error)
+	// Set the string to match on the expansion. Match either in ModePrefix (return nil error as soon as a prefix is
+	// found) or ModeExact (return nil only if there is an exact match -- otherwise return PrefixOnly error)
+	Match(str string, mode MatchMode)
 
-	// Check if the expansion matches a certain string. Will return the consumed version of the string
-	// as well as an error value of either nil (perfect match), PrefixOnly (str was a prefix), or
-	// NoMatch (str did not match)
-	Match(str string) (string, error)
+	// If there are other ways of matching the prefix (e.g. if multiple alternatives or repeats match), return the
+	// next version of the consumed string. Otherwise return "" and Exhausted error
+	Next() (string, error)
 
-	// Check if str is a prefix of the Expansion only. This is an optimized version of Match, with the caveat
-	// that it does not distinguish between a prefix and a perfect match. Prefix search decoders can leverage
-	// this method to very quickly check if a candidate utterance is a prefix of the grammar.
-	MatchPrefix(str string) (string, error)
+	// Append this expansion to a processor. This will be enable the Processor to provide the output for a given path
+	Scan(processor Processor)
 
-	// Append this expansion to a processor. This will be enable the Processor to provide the output for a
-	// given path
-	AppendToProcessor(processor Processor)
+	Copy(g *Grammar) Expansion
 }
 
-type RuleRef struct {
-	rule   *Expansion
-	ruleId string
+type Grammar struct {
+	Root *RuleRef
+	Xml  string
+
+	root     Expansion
+	rules    Rules
+	ruleRefs map[string][]*RuleRef
 }
 
-func (r RuleRef) Match(str string) (string, error) {
-	return (*r.rule).Match(str)
-}
-func (r RuleRef) MatchPrefix(str string) (string, error) {
-	return (*r.rule).MatchPrefix(str)
-}
-func (r RuleRef) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-	PreProcessTag(r.ruleId).ConsumeStack(str, stack)
-	out, p, err := (*r.rule).ConsumeStack(str, stack)
-	PostProcessTag(r.ruleId).ConsumeStack(str, stack)
-	return out, p + 2, err
+func NewGrammar() *Grammar {
+	return new(Grammar)
 }
 
-func (r RuleRef) Consume(str string) (string, Sequence, error) {
-	str, seq, err := (*r.rule).Consume(str)
+func (g *Grammar) HasPrefix(str string) bool {
+	g.Root.Match(str, ModePrefix)
+	str, err := g.Root.Next()
+
+	if err == nil && len(str) == 0 {
+		return true
+	}
+
+	return false
+}
+
+func (g *Grammar) HasMatch(str string) bool {
+	g.Root.Match(str, ModeExact)
+	str, err := g.Root.Next()
+
+	if err == nil && len(str) == 0 {
+		return true
+	}
+
+	return false
+}
+
+func (g *Grammar) GetMatch(str string, p Processor) error {
+	g.Root.Match(str, ModeExact)
+	str, err := g.Root.Next()
 
 	if err != nil {
-		return str, seq, err
+		return err
 	}
 
-	return str, Sequence{PreProcessTag(r.ruleId), seq, PostProcessTag(r.ruleId)}, nil
-}
-func (r RuleRef) AppendToProcessor(p Processor) {}
+	p.AppendTag("var ruleStack = [{}];")
+	g.Root.Scan(p)
+	p.AppendTag(fmt.Sprintf("var root = ruleStack[0]['%s'];", g.Root.ruleId))
 
-type Alternative []Item
-
-func (a Alternative) Match(str string) (string, error) {
-	outErr := NoMatch
-	for _, alt := range a {
-		str, err := alt.Match(str)
-
-		if err == nil {
-			return str, nil
-		}
-
-		if err == PrefixOnly {
-			outErr = PrefixOnly
-		}
-	}
-	return "", outErr
-}
-func (a Alternative) MatchPrefix(str string) (string, error) {
-	for _, alt := range a {
-		str, err := alt.MatchPrefix(str)
-
-		if err == nil {
-			return str, nil
-		}
-	}
-
-	return "", NoMatch
+	return nil
 }
 
-func (a Alternative) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-	outErr := NoMatch
-	for _, alt := range a {
-		out, p, err := alt.ConsumeStack(str, stack)
+func (g *Grammar) LoadXml(xml string) error {
+	g.Xml = xml
 
-		if err == nil {
-			return out, p, err
-		}
+	doc := etree.NewDocument()
 
-		if err == PrefixOnly {
-			outErr = PrefixOnly
-		}
+	if err := doc.ReadFromString(xml); err != nil {
+		return err
 	}
 
-	return "", 0, outErr
-}
-func (a Alternative) Consume(str string) (string, Sequence, error) {
-	outErr := NoMatch
-	for _, alt := range a {
-		out, seq, err := alt.Consume(str)
+	grammar := doc.SelectElement("grammar")
 
-		if err == nil {
-			return out, seq, err
-		}
-
-		if err == PrefixOnly {
-			outErr = PrefixOnly
-		}
+	if grammar == nil {
+		return InvalidGrammar
 	}
 
-	return "", nil, outErr
-}
+	rootId := grammar.SelectAttrValue("root", "")
 
-func (a Alternative) AppendToProcessor(p Processor) {}
-
-type Item struct {
-	Sequence
-	repeatMin int
-	repeatMax int
-}
-
-func (i Item) Match(str string) (string, error) {
-	return i.match(str, i.repeatMin, i.repeatMax)
-}
-func (i Item) match(str string, min, max int) (string, error) {
-	if max == 0 {
-		return str, nil
+	if rootId == "" {
+		return NoRoot
 	}
 
-	outStr, err := i.Sequence.Match(str)
+	var root Expansion
 
-	if err != nil {
-		if min <= 0 {
-			return str, nil
-		}
+	g.rules = Rules{}
 
-		return "", err
-	}
+	// holds references to a given rule id so that they can be filled in once all rules have been processed
+	g.ruleRefs = make(map[string][]*RuleRef)
 
-	return i.match(outStr, min - 1, max - 1)
-}
-
-func (i Item) MatchPrefix(str string) (string, error) { return i.matchPrefix(str, i.repeatMin, i.repeatMax) }
-func (i Item) matchPrefix(str string, min, max int) (string, error) {
-	if max == 0 {
-		return str, nil
-	}
-
-	outStr, err := i.Sequence.MatchPrefix(str)
-
-	if err != nil {
-		if min <= 0 {
-			return str, nil
-		}
-
-		return "", err
-	}
-
-	return i.matchPrefix(outStr, min - 1, max - 1)
-}
-
-func (i Item) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-	return i.consumeStack(str, stack, i.repeatMin, i.repeatMax)
-}
-func (i Item) consumeStack(str string, stack *stack.Stack, min, max int) (string, int, error) {
-	if max == 0 {
-		return str, 0, nil
-	}
-
-	outStr, p, err := i.Sequence.ConsumeStack(str, stack)
-
-	if err != nil {
-		if min <= 0 {
-			return str, p, nil
-		}
-
-		return "", p, err
-	}
-
-	out2, p2, err2 := i.consumeStack(outStr, stack, min - 1, max - 1)
-
-	return out2, p + p2, err2
-}
-
-func (i Item) Consume(str string) (string, Sequence, error) {
-	return i.consume(str, i.repeatMin, i.repeatMax, nil)
-}
-func (i Item) consume(str string, min int, max int, seq Sequence) (string, Sequence, error) {
-	if max == 0 {
-		return str, seq, nil
-	}
-
-	outStr, seq1, err := i.Sequence.Consume(str)
-
-	if err != nil {
-		if min <= 0 {
-			return str, seq, nil
-		}
-
-		return "", nil, err
-	}
-
-	seq = append(seq, seq1...)
-
-	outStr, seq2, err := i.consume(outStr, min-1, max-1, seq)
-
-	if err != nil {
-		if min > 0 {
-			return str, nil, err
-		}
-
-		return "", nil, err
-	}
-
-	return outStr, seq2, nil
-}
-
-type Sequence []Expansion
-
-func (s Sequence) Match(str string) (string, error) {
-	var err error
-	for _, e := range s {
-		str, err = e.Match(str)
+	for _, rule := range grammar.SelectElements("rule") {
+		id, exp, err := g.decodeRule(rule)
 
 		if err != nil {
-			return str, err
+			return err
 		}
-	}
 
-	return str, nil
-}
-func (s Sequence) MatchPrefix(str string) (string, error) {
-	var err error
-	for _, e := range s {
-		str, err = e.MatchPrefix(str)
-
-		if err != nil {
-			return str, err
+		if id == rootId {
+			root = exp
 		}
-	}
 
-	return str, nil
-}
+		g.rules[id] = exp
 
-func (s Sequence) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-	var err error
-	var pushes, p int
-	for _, e := range s {
-		str, p, err = e.ConsumeStack(str, stack)
-
-		if err != nil {
-			for i := pushes; i > 0; i-- {
-				stack.Pop()
+		if refs, ok := g.ruleRefs[id]; ok {
+			for _, ref := range refs {
+				ref.rule = exp.Copy(g)
 			}
-			return str, 0, err
-		}
 
-		pushes += p
-	}
-
-	return str, pushes, nil
-}
-
-func (s Sequence) Consume(str string) (string, Sequence, error) {
-	out := make([]Expansion, 0, len(s))
-
-	var seq Expansion
-	var err error
-	for _, e := range s {
-		str, seq, err = e.Consume(str)
-
-		if err != nil {
-			return str, out, err
-		}
-
-		out = append(out, seq)
-	}
-
-	return str, out, nil
-}
-func (s Sequence) AppendToProcessor(p Processor) {
-	for _, exp := range s {
-		exp.AppendToProcessor(p)
-	}
-}
-
-type Token string
-
-func (t Token) Match(str string) (string, error) {
-	if strings.HasPrefix(string(t), str) && len(string(t)) > len(str) {
-		return "", PrefixOnly
-	}
-
-	if strings.HasPrefix(str, string(t)) {
-		str = str[len(t):]
-
-		if len(str) == 0 {
-			return "", nil
-		}
-
-		if str[0] == ' ' {
-			return str[1:], nil
+			delete(g.ruleRefs, id)
 		}
 	}
 
-	return "", NoMatch
-}
-
-func (t Token) MatchPrefix(str string) (string, error) {
-	if strings.HasPrefix(string(t), str) {
-		return "", nil
+	if root == nil {
+		return RootNotFound
 	}
 
-	if strings.HasPrefix(str, string(t)) {
-		str = str[len(t):]
-
-		if len(str) == 0 {
-			return "", nil
+	if len(g.ruleRefs) > 0 {
+		refs := ""
+		for ref := range g.ruleRefs {
+			refs += ref + ", "
 		}
-
-		if str[0] == ' ' {
-			return str[1:], nil
-		}
+		return errors.New("unresolved rule refs: " + strings.TrimSuffix(refs, ", "))
 	}
 
-	return "", NoMatch
-}
-func (t Token) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-	if strings.HasPrefix(string(t), str) && len(string(t)) > len(str) {
-		return "", 0, PrefixOnly
+	g.Root = &RuleRef{
+		ruleId: rootId,
+		rule:   root,
 	}
 
-	if strings.HasPrefix(str, string(t)) {
-		str = str[len(t):]
+	return nil
+}
 
-		if len(str) == 0 {
-			stack.Push(t)
-			return "", 1, nil
-		}
+func (g *Grammar) decodeRule(rule *etree.Element) (string, Expansion, error) {
+	id := rule.SelectAttrValue("id", "")
 
-		if str[0] == ' ' {
-			stack.Push(t)
-			return str[1:], 1, nil
-		}
+	if id == "" {
+		return "", nil, UnidentifiableRule
 	}
 
-	return "", 0, NoMatch
+	exp, err := g.decodeElement(rule)
+
+	return id, exp, err
 }
-func (t Token) Consume(str string) (string, Sequence, error) {
-	if strings.HasPrefix(string(t), str) && len(string(t)) > len(str) {
-		return "", nil, PrefixOnly
-	}
 
-	if strings.HasPrefix(str, string(t)) {
-		str = str[len(t):]
+func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
+	out := new(Sequence)
 
-		if len(str) == 0 {
-			return "", []Expansion{t}, nil
+	for _, tok := range element.Child {
+		if data, ok := tok.(*etree.CharData); ok {
+			str := strings.ToLower(strings.TrimSpace(data.Data))
+
+			if len(str) == 0 {
+				continue
+			}
+
+			out.exps = append(out.exps, decodeCharData(str))
+		} else if el, ok := tok.(*etree.Element); ok {
+			if el.Tag == "ruleref" {
+				ref := el.SelectAttrValue("uri", "")
+
+				if ref == "" {
+					return nil, EmptyRuleRefUri
+				}
+
+				if ref[0] != '#' {
+					return nil, errors.New("cannot understand ruleref uri " + ref + " because it is not local")
+				}
+
+				ruleRef := new(RuleRef)
+				ruleRef.ruleId = ref[1:]
+
+				out.exps = append(out.exps, ruleRef)
+
+				if rule, ok := g.rules[ruleRef.ruleId]; ok {
+					ruleRef.rule = rule.Copy(g)
+				} else {
+					g.ruleRefs[ruleRef.ruleId] = append(g.ruleRefs[ruleRef.ruleId], ruleRef)
+				}
+			} else if el.Tag == "item" {
+				exp, err := g.decodeElement(el)
+
+				if err != nil {
+					return nil, err
+				}
+
+				out.exps = append(out.exps, exp)
+			} else if el.Tag == "one-of" {
+				alt := new(Alternative)
+				for _, item := range el.SelectElements("item") {
+					exp, err := g.decodeElement(item)
+
+					if err != nil {
+						return nil, err
+					}
+
+					alt.items = append(alt.items, exp.(*Item))
+				}
+
+				out.exps = append(out.exps, alt)
+			} else if el.Tag == "tag" {
+				out.exps = append(out.exps, NewTag(el.Text()))
+			} else if el.Tag == "example" {
+				// ignore
+			} else {
+				return nil, errors.New("unable to parse tag " + el.Tag + " " + el.SelectAttrValue("id", "no id"))
+			}
+		} else {
+			fmt.Println("Unable to process", tok, "Ignoring.")
 		}
 
-		if str[0] == ' ' {
-			return str[1:], []Expansion{t}, nil
-		}
 	}
 
-	return "", nil, NoMatch
-}
-func (t Token) AppendToProcessor(p Processor) { p.AppendString(string(t)) }
+	if element.Tag == "item" {
+		repeat := element.SelectAttrValue("repeat", "1-1")
 
-type Tag string
+		minMax := strings.Split(repeat, "-")
 
-func (t Tag) Match(str string) (string, error) { return str, nil }
-func (t Tag) MatchPrefix(str string) (string, error) { return str, nil }
-func (t Tag) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-	stack.Push(t)
-	return str, 1, nil
-}
+		var min, max int
+		var err error
 
-func (t Tag) Consume(str string) (string, Sequence, error) { return str, []Expansion{t}, nil }
-func (t Tag) AppendToProcessor(p Processor)                {
-	p.AppendTag(string(t))
-}
+		if len(minMax) == 1 {
+			if min, err = strconv.Atoi(minMax[0]); err != nil {
+				return nil, err
+			}
 
+			max = min
+		} else if len(minMax) == 2 {
+			if minMax[0] == "" {
+				min = 0
+			} else if min, err = strconv.Atoi(minMax[0]); err != nil {
+				return nil, err
+			}
 
-type PreProcessTag string
-func (t PreProcessTag) MatchPrefix(str string) (string, error) { return str, nil }
-func (t PreProcessTag) Match(str string) (string, error) { return str, nil }
-func (t PreProcessTag) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-	stack.Push(t)
-	return str, 1, nil
-}
+			if max, err = strconv.Atoi(minMax[1]); err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, errors.New("invalid repeat")
+		}
 
-func (t PreProcessTag) Consume(str string) (string, Sequence, error) { return str, []Expansion{t}, nil }
-func (t PreProcessTag) AppendToProcessor(p Processor) {
-	p.AppendTag(fmt.Sprintf(`
-rules.%s = {};
+		return NewItem(out, min, max), nil
+	}
 
-if (root == undefined) {
-	root = rules.%s;
+	return out, nil
 }
 
-(function() {
-	var out;
-`, string(t), string(t)))
-}
+func decodeCharData(data string) Expansion {
+	if len(data) == 0 {
+		return nil
+	}
 
-type PostProcessTag string
-func (t PostProcessTag) Match(str string) (string, error) { return str, nil }
-func (t PostProcessTag) MatchPrefix(str string) (string, error) { return str, nil }
-func (t PostProcessTag) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-	stack.Push(t)
-	return str, 1, nil
-}
-func (t PostProcessTag) Consume(str string) (string, Sequence, error) { return str, []Expansion{t}, nil }
-func (t PostProcessTag) AppendToProcessor(p Processor) {
-	p.AppendTag(fmt.Sprintf(`
-	rules.%s.out = out;
-})();
-`, string(t)))
+	return NewToken(data)
 }
