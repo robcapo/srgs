@@ -18,7 +18,6 @@ const (
 var (
 	NoMatch    = errors.New("cannot consume string with token")
 	PrefixOnly = errors.New("string matched is a prefix")
-	Exhausted  = errors.New("exhausted expansion")
 )
 
 var (
@@ -26,7 +25,7 @@ var (
 	NoRoot             = errors.New("no root present in grammar")
 	RootNotFound       = errors.New("unable to find root rule")
 	UnidentifiableRule = errors.New("rules must have an id")
-	EmptyRuleRefUri    = errors.New("rulerefs must have a non-zero uri")
+	EmptyRuleRefUri    = errors.New("rulerefs must have a non-empty uri")
 )
 
 // An expansion is any part of a grammar that can match a string
@@ -50,13 +49,13 @@ type Expansion interface {
 	Next() (string, error)
 
 	// Append this expansion to a processor. This will be enable the Processor to provide the output for a given path
-	AppendToProcessor(processor Processor)
+	Scan(processor Processor)
 
 	Copy(g *Grammar) Expansion
 }
 
 type Grammar struct {
-	Root Expansion
+	Root *RuleRef
 	Xml  string
 
 	root     Expansion
@@ -88,6 +87,21 @@ func (g *Grammar) HasMatch(str string) bool {
 	}
 
 	return false
+}
+
+func (g *Grammar) GetMatch(str string, p Processor) error {
+	g.Root.Match(str, ModeExact)
+	str, err := g.Root.Next()
+
+	if err != nil {
+		return err
+	}
+
+	p.AppendTag("var ruleStack = [{}];")
+	g.Root.Scan(p)
+	p.AppendTag(fmt.Sprintf("var root = ruleStack[0]['%s'];", g.Root.ruleId))
+
+	return nil
 }
 
 func (g *Grammar) LoadXml(xml string) error {

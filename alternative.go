@@ -49,20 +49,6 @@ func (a *Alternative) Next() (string, error) {
 	return "", outErr
 }
 
-//func (a Alternative) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-//	outErr := NoMatch
-//	for _, alt := range a.items {
-//		out, p, err := alt.ConsumeStack(str, stack)
-//
-//		if err == nil {
-//			return out, p, err
-//		}
-//
-//		if err == PrefixOnly {
-//			outErr = PrefixOnly
-//		}
-//	}
-//
-//	return "", 0, outErr
-//}
-func (a *Alternative) AppendToProcessor(p Processor) {}
+func (a *Alternative) Scan(p Processor) {
+	a.items[a.currentInd].Scan(p)
+}

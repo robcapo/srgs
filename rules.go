@@ -1,5 +1,7 @@
 package srgs
 
+import "fmt"
+
 type Rules map[string]Expansion
 
 type RuleRef struct {
@@ -25,11 +27,11 @@ func (r *RuleRef) Copy(g *Grammar) Expansion {
 	return ref
 }
 
-//func (r RuleRef) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-//	PreProcessTag(r.ruleId).ConsumeStack(str, stack)
-//	out, p, err := (*r.rule).ConsumeStack(str, stack)
-//	PostProcessTag(r.ruleId).ConsumeStack(str, stack)
-//	return out, p + 2, err
-//}
-
-func (r *RuleRef) AppendToProcessor(p Processor) {}
+func (r *RuleRef) Scan(p Processor) {
+	p.AppendTag("ruleStack.push({}); var out;")
+	r.rule.Scan(p)
+	p.AppendTag(fmt.Sprintf(`ruleStack.pop();
+ruleStack[ruleStack.length-1]['%s'] = {'out': out};
+out = undefined;
+`, r.ruleId))
+}

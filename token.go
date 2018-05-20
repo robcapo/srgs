@@ -68,45 +68,4 @@ func (t *Token) Next() (string, error) {
 	return "", NoMatch
 }
 
-func (t *Token) AppendToProcessor(p Processor) { p.AppendString(t.token) }
-
-//func (t Token) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-//	if strings.HasPrefix(string(t), str) && len(string(t)) > len(str) {
-//		return "", 0, PrefixOnly
-//	}
-//
-//	if strings.HasPrefix(str, string(t)) {
-//		str = str[len(t):]
-//
-//		if len(str) == 0 {
-//			stack.Push(t)
-//			return "", 1, nil
-//		}
-//
-//		if str[0] == ' ' {
-//			stack.Push(t)
-//			return str[1:], 1, nil
-//		}
-//	}
-//
-//	return "", 0, NoMatch
-//}
-//func (t Token) Consume(str string) (string, Sequence, error) {
-//	if strings.HasPrefix(string(t), str) && len(string(t)) > len(str) {
-//		return "", nil, PrefixOnly
-//	}
-//
-//	if strings.HasPrefix(str, string(t)) {
-//		str = str[len(t):]
-//
-//		if len(str) == 0 {
-//			return "", []Expansion{t}, nil
-//		}
-//
-//		if str[0] == ' ' {
-//			return str[1:], []Expansion{t}, nil
-//		}
-//	}
-//
-//	return "", nil, NoMatch
-//}
+func (t *Token) Scan(p Processor) { p.AppendString(t.token) }

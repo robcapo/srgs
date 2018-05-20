@@ -59,28 +59,8 @@ func (s *Sequence) Next() (string, error) {
 	return str, err
 }
 
-//
-//func (s Sequence) ConsumeStack(str string, stack *stack.Stack) (string, int, error) {
-//	var err error
-//	var pushes, p int
-//	for _, e := range s.exps {
-//		str, p, err = e.ConsumeStack(str, stack)
-//
-//		if err != nil {
-//			for i := pushes; i > 0; i-- {
-//				stack.Pop()
-//			}
-//			return str, 0, err
-//		}
-//
-//		pushes += p
-//	}
-//
-//	return str, pushes, nil
-//}
-
-func (s *Sequence) AppendToProcessor(p Processor) {
+func (s *Sequence) Scan(p Processor) {
 	for _, exp := range s.exps {
-		exp.AppendToProcessor(p)
+		exp.Scan(p)
 	}
 }

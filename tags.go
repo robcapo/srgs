@@ -25,8 +25,14 @@ func (t *Tag) Next() (string, error) {
 
 	return t.match, nil
 }
-func (t *Tag) AppendToProcessor(p Processor) {
+func (t *Tag) Scan(p Processor) {
+	p.AppendTag(`(function () {
+	var rules = ruleStack[ruleStack.length-1];
+`)
 	p.AppendTag(t.text)
+
+	p.AppendTag(`
+})();`)
 }
 func (t *Tag) Copy(g *Grammar) Expansion {
 	return &Tag{text: t.text}
