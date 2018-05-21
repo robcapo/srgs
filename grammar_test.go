@@ -88,18 +88,54 @@ func BenchmarkDigitsMatchOneTwo(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkMatch(b, g, "one two")
+	benchmarkMatch(b, g, "one two", ModeExact)
+}
+func BenchmarkDigitsPrefixOneTwo(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two", ModePrefix)
+}
+func BenchmarkDigitsMatchFoo(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "foo", ModeExact)
+}
+func BenchmarkDigitsPrefixFoo(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "foo", ModePrefix)
+}
+func BenchmarkDigitsMatchOneTwoThreeFourFix(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two three four fix", ModeExact)
+}
+func BenchmarkDigitsPrefixOneTwoThreeFourFix(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two three four fix", ModePrefix)
 }
 func BenchmarkDigitsMatchOneTwoThreeFourFive(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkMatch(b, g, "one two three four five")
+	benchmarkMatch(b, g, "one two three four five", ModeExact)
+}
+func BenchmarkDigitsPrefixOneTwoThreeFourFive(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two three four five", ModePrefix)
 }
 
 var match bool
 
-func benchmarkMatch(b *testing.B, g *Grammar, prefix string) {
+func benchmarkMatch(b *testing.B, g *Grammar, prefix string, mode MatchMode) {
 	var out bool
 	for i := 0; i < b.N; i++ {
 		out = g.HasPrefix(prefix)
@@ -158,44 +194,6 @@ func TestSisr(t *testing.T) {
 	assert.Equal("15", inst)
 }
 
-//func BenchmarkDigitsOne(b *testing.B) {
-//	g := NewGrammar()
-//	g.LoadXml(digitsXml)
-//
-//	benchmarkConsumeStack(b, g, "one")
-//}
-//func BenchmarkDigitsOneTwo(b *testing.B) {
-//	g := NewGrammar()
-//	g.LoadXml(digitsXml)
-//
-//	benchmarkConsumeStack(b, g, "one two")
-//}
-//func BenchmarkDigitsOneTwoThree(b *testing.B) {
-//	g := NewGrammar()
-//	g.LoadXml(digitsXml)
-//
-//	benchmarkConsumeStack(b, g, "one two three")
-//}
-//func BenchmarkDigitsOneTwoThreeFour(b *testing.B) {
-//	g := NewGrammar()
-//	g.LoadXml(digitsXml)
-//
-//	benchmarkConsumeStack(b, g, "one two three four")
-//}
-//func BenchmarkDigitsOneTwoThreeFourFive(b *testing.B) {
-//	g := NewGrammar()
-//	g.LoadXml(digitsXml)
-//
-//	benchmarkConsumeStack(b, g, "one two three four five")
-//}
-//
-//func benchmarkConsumeStack(b *testing.B, g *Grammar, prefix string) {
-//	for i := 0; i < b.N; i++ {
-//		stk := stack.New()
-//		g.Root.ConsumeStack(prefix, stk)
-//	}
-//}
-
 func BenchmarkParse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g := NewGrammar()
@@ -203,42 +201,33 @@ func BenchmarkParse(b *testing.B) {
 	}
 }
 
-//func TestDigits(t *testing.T) {
-//	assert := assert.New(t)
-//
-//	g := NewGrammar()
-//	err := g.LoadXml(digitsXml)
-//
-//	if !assert.Nil(err) {
-//		return
-//	}
-//
-//	stk := stack.New()
-//	_, _, err = g.Root.ConsumeStack("one two three four five", stk)
-//
-//	if !assert.Nil(err) {
-//		return
-//	}
-//
-//	p := new(SISRProcessor)
-//	p.ProcessStack(stk)
-//
-//	assert.Equal("one two three four five", p.GetInterpretation())
-//
-//	out, err := p.GetInstance()
-//	assert.Nil(err)
-//	assert.Equal("12345", out)
-//
-//	stk = stack.New()
-//	_, _, err = g.Root.ConsumeStack("triple three four five", stk)
-//
-//	p = new(SISRProcessor)
-//	p.ProcessStack(stk)
-//
-//	assert.Nil(err)
-//
-//	out, err = p.GetInstance()
-//	assert.Nil(err)
-//
-//	assert.Equal("33345", out)
-//}
+func TestDigits(t *testing.T) {
+	assert := assert.New(t)
+
+	g := NewGrammar()
+	if !assert.Nil(g.LoadXml(digitsXml)) {
+		return
+	}
+
+	p := new(SISRProcessor)
+
+	if !assert.Nil(g.GetMatch("one two three four five", p)) {
+		return
+	}
+
+	assert.Equal("one two three four five", p.GetInterpretation())
+
+	out, err := p.GetInstance()
+	assert.Nil(err)
+	assert.Equal("12345", out)
+
+	p = new(SISRProcessor)
+	if !assert.Nil(g.GetMatch("triple three four five", p)) {
+		return
+	}
+
+	out, err = p.GetInstance()
+	assert.Nil(err)
+
+	assert.Equal("33345", out)
+}

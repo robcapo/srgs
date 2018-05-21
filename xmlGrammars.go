@@ -13,9 +13,8 @@ var digitsXml = `<?xml version="1.0" encoding="UTF-8" ?>
 	<one-of>
 	  <item>
 		<ruleref uri="#digit" />
-		<tag>out = rules.digit.out</tag>
 		<ruleref uri="#quartet" />
-		<tag>out = out + rules.quartet.out</tag>
+		<tag>out = rules.digit.out + rules.quartet.out</tag>
 	  </item>
 	  <item>
 		<ruleref uri="#quartet" />
