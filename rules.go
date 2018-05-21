@@ -28,10 +28,9 @@ func (r *RuleRef) Copy(g *Grammar) Expansion {
 }
 
 func (r *RuleRef) Scan(p Processor) {
-	p.AppendTag("ruleStack.push({}); var out;")
+	p.AppendTag("scopes.push({'rules':{}, 'out':undefined});")
 	r.rule.Scan(p)
-	p.AppendTag(fmt.Sprintf(`ruleStack.pop();
-ruleStack[ruleStack.length-1]['%s'] = {'out': out};
-out = undefined;
+	p.AppendTag(fmt.Sprintf(`var last = scopes.pop();
+scopes[scopes.length-1]['rules']['%s'] = {'out': last.out};
 `, r.ruleId))
 }
