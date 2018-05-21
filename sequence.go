@@ -34,10 +34,6 @@ func (s *Sequence) Next() (string, error) {
 		return "", NoMatch
 	}
 
-	if s.nextInd == len(s.exps) {
-		return "", NoMatch
-	}
-
 	var str string
 	var err error
 
@@ -49,10 +45,9 @@ func (s *Sequence) Next() (string, error) {
 			return s.Next()
 		}
 
-		s.nextInd = i + 1
-
 		if i+1 < len(s.exps) {
-			s.exps[i+1].Match(str, s.mode)
+			s.nextInd = i + 1
+			s.exps[s.nextInd].Match(str, s.mode)
 		}
 	}
 

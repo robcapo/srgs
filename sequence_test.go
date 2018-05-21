@@ -1,8 +1,8 @@
 package srgs
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestSequence_MatchSimplePrefixMode(t *testing.T) {
@@ -18,7 +18,6 @@ func TestSequence_MatchSimplePrefixMode(t *testing.T) {
 
 	assert.Nil(err)
 	assert.Empty(str)
-
 
 	seq.Match("my nam", ModePrefix)
 	str, err = seq.Next()
@@ -40,5 +39,36 @@ func TestSequence_MatchSimplePrefixMode(t *testing.T) {
 	seq.Match("your name is", ModePrefix)
 	str, err = seq.Next()
 
+	assert.Equal(NoMatch, err)
+}
+
+func TestSequenceWithGarbage(t *testing.T) {
+	assert := assert.New(t)
+
+	seq := new(Sequence)
+	seq.exps = []Expansion{
+		new(Garbage),
+		NewToken("ten"),
+		new(Garbage),
+	}
+
+	seq.Match("i am ten years old", ModeExact)
+
+	var str string
+	var err error
+
+	str, err = seq.Next()
+	assert.Nil(err)
+	assert.Equal("years old", str)
+
+	str, err = seq.Next()
+	assert.Nil(err)
+	assert.Equal("old", str)
+
+	str, err = seq.Next()
+	assert.Nil(err)
+	assert.Empty(str)
+
+	str, err = seq.Next()
 	assert.Equal(NoMatch, err)
 }

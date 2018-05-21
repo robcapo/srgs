@@ -231,3 +231,61 @@ func TestDigits(t *testing.T) {
 
 	assert.Equal("33345", out)
 }
+
+func TestGrammarWithGarbage(t *testing.T) {
+	assert := assert.New(t)
+
+	xml := `<?xml version="1.0" encoding="UTF-8" ?>
+<grammar xmlns="http://www.w3.org/2001/06/grammar" version="1.0" xml:lang="en-US" root="example" tag-format="swi-semantics/1.0">
+	<rule scope="public" id="example">
+		<ruleref special="GARBAGE" />
+		<one-of>
+			<item>
+				ten
+				<tag>out = 10;</tag>
+			</item>
+			<item>
+				fifteen
+				<tag>out = 15;</tag>
+			</item>
+			<item>
+				twenty
+				<tag>out = 20;</tag>
+			</item>
+		</one-of>
+		<ruleref special="GARBAGE" />
+	</rule>
+</grammar>
+`
+	g := NewGrammar()
+	if !assert.Nil(g.LoadXml(xml)) {
+		return
+	}
+
+	assert.True(g.HasMatch("i am ten"))
+	assert.True(g.HasMatch("ten years old"))
+	assert.True(g.HasMatch("i am ten years old"))
+
+	assert.True(g.HasPrefix("i am ten"))
+	assert.True(g.HasPrefix("ten years old"))
+	assert.True(g.HasPrefix("i am ten years old"))
+
+	assert.False(g.HasMatch("i am nine"))
+	assert.False(g.HasMatch("nine years old"))
+	assert.False(g.HasMatch("i am nine years old"))
+
+	assert.True(g.HasPrefix("i am nine"))
+	assert.True(g.HasPrefix("nine years old"))
+	assert.True(g.HasPrefix("i am nine years old"))
+
+	p := new(SISRProcessor)
+
+	assert.Nil(g.GetMatch("i am ten years old", p))
+
+	assert.Equal("ten", p.GetInterpretation())
+
+	out, err := p.GetInstance()
+
+	assert.Nil(err)
+	assert.Equal("10", out)
+}

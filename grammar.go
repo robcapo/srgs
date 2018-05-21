@@ -71,30 +71,50 @@ func (g *Grammar) HasPrefix(str string) bool {
 	g.Root.Match(str, ModePrefix)
 	str, err := g.Root.Next()
 
-	if err == nil && len(str) == 0 {
-		return true
-	}
+	for {
+		if err != nil {
+			return false
+		}
 
-	return false
+		if len(str) == 0 {
+			return true
+		}
+
+		str, err = g.Root.Next()
+	}
 }
 
 func (g *Grammar) HasMatch(str string) bool {
 	g.Root.Match(str, ModeExact)
 	str, err := g.Root.Next()
 
-	if err == nil && len(str) == 0 {
-		return true
-	}
+	for {
+		if err != nil {
+			return false
+		}
 
-	return false
+		if len(str) == 0 {
+			return true
+		}
+
+		str, err = g.Root.Next()
+	}
 }
 
 func (g *Grammar) GetMatch(str string, p Processor) error {
 	g.Root.Match(str, ModeExact)
 	str, err := g.Root.Next()
 
-	if err != nil {
-		return err
+	for {
+		if err != nil {
+			return err
+		}
+
+		if len(str) == 0 {
+			break
+		}
+
+		str, err = g.Root.Next()
 	}
 
 	p.AppendTag("var scopes = [{'rules':{}}];")
@@ -200,6 +220,13 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 			out.exps = append(out.exps, decodeCharData(str))
 		} else if el, ok := tok.(*etree.Element); ok {
 			if el.Tag == "ruleref" {
+				special := el.SelectAttrValue("special", "")
+
+				if special == "GARBAGE" {
+					out.exps = append(out.exps, new(Garbage))
+					continue
+				}
+
 				ref := el.SelectAttrValue("uri", "")
 
 				if ref == "" {
