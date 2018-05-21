@@ -88,18 +88,54 @@ func BenchmarkDigitsMatchOneTwo(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkMatch(b, g, "one two")
+	benchmarkMatch(b, g, "one two", ModeExact)
+}
+func BenchmarkDigitsPrefixOneTwo(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two", ModePrefix)
+}
+func BenchmarkDigitsMatchFoo(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "foo", ModeExact)
+}
+func BenchmarkDigitsPrefixFoo(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "foo", ModePrefix)
+}
+func BenchmarkDigitsMatchOneTwoThreeFourFix(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two three four fix", ModeExact)
+}
+func BenchmarkDigitsPrefixOneTwoThreeFourFix(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two three four fix", ModePrefix)
 }
 func BenchmarkDigitsMatchOneTwoThreeFourFive(b *testing.B) {
 	g := NewGrammar()
 	g.LoadXml(digitsXml)
 
-	benchmarkMatch(b, g, "one two three four five")
+	benchmarkMatch(b, g, "one two three four five", ModeExact)
+}
+func BenchmarkDigitsPrefixOneTwoThreeFourFive(b *testing.B) {
+	g := NewGrammar()
+	g.LoadXml(digitsXml)
+
+	benchmarkMatch(b, g, "one two three four five", ModePrefix)
 }
 
 var match bool
 
-func benchmarkMatch(b *testing.B, g *Grammar, prefix string) {
+func benchmarkMatch(b *testing.B, g *Grammar, prefix string, mode MatchMode) {
 	var out bool
 	for i := 0; i < b.N; i++ {
 		out = g.HasPrefix(prefix)
