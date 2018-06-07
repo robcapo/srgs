@@ -34,6 +34,6 @@ func TestGarbage(t *testing.T) {
 	assert.Nil(err)
 	assert.Empty(str)
 
-	str, err = g.Next()
+	_, err = g.Next()
 	assert.Equal(NoMatch, err)
 }

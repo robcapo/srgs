@@ -37,7 +37,7 @@ func TestSequence_MatchSimplePrefixMode(t *testing.T) {
 	assert.Equal(NoMatch, err)
 
 	seq.Match("your name is", ModePrefix)
-	str, err = seq.Next()
+	_, err = seq.Next()
 
 	assert.Equal(NoMatch, err)
 }
