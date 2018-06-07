@@ -69,6 +69,6 @@ func TestSequenceWithGarbage(t *testing.T) {
 	assert.Nil(err)
 	assert.Empty(str)
 
-	str, err = seq.Next()
+	_, err = seq.Next()
 	assert.Equal(NoMatch, err)
 }
