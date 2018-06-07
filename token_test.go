@@ -1,14 +1,14 @@
 package srgs
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestToken_MatchPrefixMode(t *testing.T) {
 	assert := assert.New(t)
 
-	tok := Token{token:"my name is"}
+	tok := Token{token: "my name is"}
 
 	// Test covered utterance
 	tok.Match("my name is rob", ModePrefix)
@@ -38,7 +38,7 @@ func TestToken_MatchPrefixMode(t *testing.T) {
 func TestToken_MatchExactMode(t *testing.T) {
 	assert := assert.New(t)
 
-	tok := Token{token:"my name is"}
+	tok := Token{token: "my name is"}
 
 	// Test covered utterance
 	tok.Match("my name is rob", ModeExact)

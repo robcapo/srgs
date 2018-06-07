@@ -110,7 +110,6 @@ func (g *Grammar) HasMatch(str string) bool {
 	}
 }
 
-
 // Uses a processor to find a match and scan the match into the processor for SISR
 func (g *Grammar) GetMatch(str string, p Processor) error {
 	g.Root.Match(str, ModeExact)

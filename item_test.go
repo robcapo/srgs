@@ -1,8 +1,8 @@
 package srgs
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestItem_MatchRepeatRange(t *testing.T) {
