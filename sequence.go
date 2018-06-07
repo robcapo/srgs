@@ -1,5 +1,6 @@
 package srgs
 
+// Sequence is any sequence of legal expansions (see https://www.w3.org/TR/speech-grammar/#S2.3)
 type Sequence struct {
 	exps []Expansion
 
@@ -9,6 +10,7 @@ type Sequence struct {
 	nextInd int
 }
 
+// Implements Expansion Copy method
 func (s *Sequence) Copy(g *Grammar) Expansion {
 	out := new(Sequence)
 	out.exps = make([]Expansion, len(s.exps))
@@ -20,6 +22,7 @@ func (s *Sequence) Copy(g *Grammar) Expansion {
 	return out
 }
 
+// Implements Expansion Match method
 func (s *Sequence) Match(str string, mode MatchMode) {
 	s.str = str
 	s.mode = mode
@@ -29,6 +32,7 @@ func (s *Sequence) Match(str string, mode MatchMode) {
 	s.exps[0].Match(str, mode)
 }
 
+// Implements Expansion Next method
 func (s *Sequence) Next() (string, error) {
 	if s.nextInd < 0 {
 		return "", NoMatch
@@ -54,6 +58,7 @@ func (s *Sequence) Next() (string, error) {
 	return str, err
 }
 
+// Implements Expansion Scan method
 func (s *Sequence) Scan(p Processor) {
 	for _, exp := range s.exps {
 		exp.Scan(p)

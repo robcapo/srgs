@@ -51,9 +51,13 @@ type Expansion interface {
 	// Append this expansion to a processor. This will be enable the Processor to provide the output for a given path
 	Scan(processor Processor)
 
+	// Returns a copy of the expansion. This is needed because expansions implementations are stateful, and a single
+	// path through a grammar may reference the same rule multiple times. In that case, the states of each reference
+	// must be independent.
 	Copy(g *Grammar) Expansion
 }
 
+// Grammar is a representation of an SRGS grammar.
 type Grammar struct {
 	Root *RuleRef
 	Xml  string
@@ -63,10 +67,13 @@ type Grammar struct {
 	ruleRefs map[string][]*RuleRef
 }
 
+// Creates a new grammar
 func NewGrammar() *Grammar {
 	return new(Grammar)
 }
 
+// Returns whether a specific string is a prefix of the grammar. For example, a grammar that matches the string
+// "i want to go to the park", will also return true for HasPrefix("i want to g")
 func (g *Grammar) HasPrefix(str string) bool {
 	g.Root.Match(str, ModePrefix)
 	str, err := g.Root.Next()
@@ -84,6 +91,8 @@ func (g *Grammar) HasPrefix(str string) bool {
 	}
 }
 
+// Returns whether a specific string is an exact match for the grammar. Note that this means the string is not a prefix
+// and it is also not longer than the grammar.
 func (g *Grammar) HasMatch(str string) bool {
 	g.Root.Match(str, ModeExact)
 	str, err := g.Root.Next()
@@ -101,6 +110,8 @@ func (g *Grammar) HasMatch(str string) bool {
 	}
 }
 
+
+// Uses a processor to find a match and scan the match into the processor for SISR
 func (g *Grammar) GetMatch(str string, p Processor) error {
 	g.Root.Match(str, ModeExact)
 	str, err := g.Root.Next()
@@ -124,6 +135,7 @@ func (g *Grammar) GetMatch(str string, p Processor) error {
 	return nil
 }
 
+// Loads an XML document into a grammar
 func (g *Grammar) LoadXml(xml string) error {
 	g.Xml = xml
 
