@@ -1,6 +1,8 @@
 package srgs
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Rules map[string]Expansion
 
@@ -28,9 +30,10 @@ func (r *RuleRef) Copy(g *Grammar) Expansion {
 }
 
 func (r *RuleRef) Scan(p Processor) {
-	p.AppendTag("scopes.push({'rules':{}, 'out':undefined});")
+	p.AppendTag("scopes.push({'rules':{}, 'out':undefined, 'raw':undefined});")
 	r.rule.Scan(p)
 	p.AppendTag(fmt.Sprintf(`var last = scopes.pop();
-scopes[scopes.length-1]['rules']['%s'] = {'out': last.out};
+scopes[scopes.length-1]['rules']['%s'] = {'out': last.out, 'raw': last.raw};
+scopes[scopes.length-1]['raw'] = scopes[scopes.length-1]['raw'] ? scopes[scopes.length-1]['raw'] + ' ' + last.raw : last.raw;
 `, r.ruleId))
 }

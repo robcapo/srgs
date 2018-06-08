@@ -30,6 +30,7 @@ func (t *Tag) Scan(p Processor) {
 (function () {
 	var rules = scopes[scopes.length-1]['rules'];
 	var out = scopes[scopes.length-1]['out'];
+	var raw = scopes[scopes.length-1]['raw'];
 `)
 	p.AppendTag(t.text)
 

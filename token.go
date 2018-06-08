@@ -1,5 +1,9 @@
 package srgs
 
+import (
+	"fmt"
+)
+
 type Token struct {
 	token string
 
@@ -68,4 +72,7 @@ func (t *Token) Next() (string, error) {
 	return "", NoMatch
 }
 
-func (t *Token) Scan(p Processor) { p.AppendString(t.token) }
+func (t *Token) Scan(p Processor) { 
+	p.AppendString(t.token) 
+	p.AppendTag(fmt.Sprintf("scopes[scopes.length-1]['raw'] = scopes[scopes.length-1]['raw'] ? scopes[scopes.length-1]['raw'] + ' %s' : '%s';", t.token,t.token))
+}
