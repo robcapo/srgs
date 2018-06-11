@@ -334,8 +334,9 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 			} else if min, err = strconv.Atoi(minMax[0]); err != nil {
 				return nil, err
 			}
-
-			if max, err = strconv.Atoi(minMax[1]); err != nil {
+			if minMax[1] == "" {
+				max = 9999
+			} else if max, err = strconv.Atoi(minMax[1]); err != nil {
 				return nil, err
 			}
 		} else {
