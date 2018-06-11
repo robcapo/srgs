@@ -8,6 +8,9 @@ type Item struct {
 	str  string
 	mode MatchMode
 
+	state      ItemState
+	trackState bool
+
 	currentRepeat int
 }
 
@@ -36,6 +39,10 @@ func (it *Item) Match(str string, mode MatchMode) {
 func (it *Item) Next() (string, error) {
 	it.currentRepeat++
 
+	if it.trackState {
+		it.state = make(ItemState, it.currentRepeat)
+	}
+
 	var str = it.str
 	var err error
 	for i := 0; i < it.currentRepeat; i++ {
@@ -45,6 +52,10 @@ func (it *Item) Next() (string, error) {
 		if err != nil {
 			break
 		}
+
+		if it.trackState {
+			it.state[i] = it.child.GetState()
+		}
 	}
 
 	return str, err
@@ -52,6 +63,27 @@ func (it *Item) Next() (string, error) {
 
 func (it *Item) Scan(processor Processor) {
 	for i := 0; i < it.currentRepeat; i++ {
+		if it.trackState {
+			it.child.SetState(it.state[i])
+		}
 		it.child.Scan(processor)
 	}
+}
+
+func (it *Item) SetState(s State) {
+	state, ok := s.(ItemState)
+
+	if !ok {
+		panic("Got invalid state. Expecting ItemState")
+	}
+
+	it.state = state
+}
+
+func (it *Item) GetState() State {
+	return it.state
+}
+
+func (it *Item) TrackState(t bool) {
+	it.trackState = t
 }
