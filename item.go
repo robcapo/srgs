@@ -39,6 +39,11 @@ func (it *Item) Match(str string, mode MatchMode) {
 func (it *Item) Next() (string, error) {
 	it.currentRepeat++
 
+	if it.currentRepeat > it.repeatMax {
+		it.currentRepeat--
+		return "", NoMatch
+	}
+
 	if it.trackState {
 		it.state = make(ItemState, it.currentRepeat)
 	}
@@ -50,6 +55,7 @@ func (it *Item) Next() (string, error) {
 		str, err = it.child.Next()
 
 		if err != nil {
+			it.currentRepeat--
 			break
 		}
 
@@ -77,6 +83,8 @@ func (it *Item) SetState(s State) {
 		panic("Got invalid state. Expecting ItemState")
 	}
 
+	it.currentRepeat = len(state)
+
 	it.state = state
 }
 
@@ -86,4 +94,5 @@ func (it *Item) GetState() State {
 
 func (it *Item) TrackState(t bool) {
 	it.trackState = t
+	it.child.TrackState(t)
 }
