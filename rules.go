@@ -29,6 +29,18 @@ func (r *RuleRef) Copy(g *Grammar) Expansion {
 	return ref
 }
 
+func (r *RuleRef) GetState() State {
+	return r.rule.GetState()
+}
+
+func (r *RuleRef) SetState(s State) {
+	r.rule.SetState(s)
+}
+
+func (r *RuleRef) TrackState(t bool) {
+	r.rule.TrackState(t)
+}
+
 func (r *RuleRef) Scan(p Processor) {
 	p.AppendTag("scopes.push({'rules':{}, 'out':undefined, 'raw':undefined});")
 	r.rule.Scan(p)

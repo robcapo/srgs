@@ -49,13 +49,35 @@ type Expansion interface {
 	Next() (string, error)
 
 	// Append this expansion to a processor. This will be enable the Processor to provide the output for a given path
-	Scan(processor Processor)
+	Scan(Processor)
+
+	// Get the state of an Expansion (this will be used from a parent to child to get the state that matched)
+	GetState() State
+
+	// Set the state of an Expansion (this will be used from a parent to child to Scan appropriately
+	SetState(State)
+
+	// Set whether the Expansion should keep track of its state during matching
+	TrackState(bool)
 
 	// Returns a copy of the expansion. This is needed because expansions implementations are stateful, and a single
 	// path through a grammar may reference the same rule multiple times. In that case, the states of each reference
 	// must be independent.
 	Copy(g *Grammar) Expansion
 }
+
+// State is the internal representation of an Expansion which matched an utterance. This is used to determine the
+// path that matched when scanning the match into a processor
+type State interface{}
+
+type AlternativeState struct {
+	index int
+	state State
+}
+
+type SequenceState []State
+
+type ItemState []State
 
 // Grammar is a representation of an SRGS grammar.
 type Grammar struct {
@@ -112,6 +134,7 @@ func (g *Grammar) HasMatch(str string) bool {
 
 // Uses a processor to find a match and scan the match into the processor for SISR
 func (g *Grammar) GetMatch(str string, p Processor) error {
+	g.Root.TrackState(true)
 	g.Root.Match(str, ModeExact)
 	str, err := g.Root.Next()
 

@@ -35,5 +35,9 @@ func (g *Garbage) Next() (string, error) {
 	return g.match[g.currentInd:], nil
 }
 
+func (g *Garbage) SetState(_ State)  {}
+func (g *Garbage) GetState() State   { return nil }
+func (g *Garbage) TrackState(_ bool) {}
+
 func (g *Garbage) Copy(gr *Grammar) Expansion { return new(Garbage) }
 func (g *Garbage) Scan(processor Processor)   {}

@@ -52,3 +52,28 @@ func (a *Alternative) Next() (string, error) {
 func (a *Alternative) Scan(p Processor) {
 	a.items[a.currentInd].Scan(p)
 }
+
+func (a *Alternative) TrackState(t bool) {
+	for _, exp := range a.items {
+		exp.TrackState(t)
+	}
+}
+
+func (a *Alternative) GetState() State {
+	return AlternativeState{
+		index: a.currentInd,
+		state: a.items[a.currentInd].GetState(),
+	}
+}
+
+func (a *Alternative) SetState(s State) {
+	state, ok := s.(AlternativeState)
+
+	if !ok {
+		panic("Got an invalid date in alternative")
+	}
+
+	a.currentInd = state.index
+
+	a.items[a.currentInd].SetState(state.state)
+}

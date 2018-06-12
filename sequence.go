@@ -7,6 +7,8 @@ type Sequence struct {
 	str  string
 	mode MatchMode
 
+	state SequenceState
+
 	nextInd int
 }
 
@@ -58,9 +60,43 @@ func (s *Sequence) Next() (string, error) {
 	return str, err
 }
 
+func (s *Sequence) GetState() State {
+	state := make(SequenceState, len(s.exps))
+
+	for i, exp := range s.exps {
+		state[i] = exp.GetState()
+	}
+
+	return state
+}
+
+func (s *Sequence) SetState(state State) {
+	seqState, ok := state.(SequenceState)
+
+	if !ok {
+		panic("Expecting sequence state")
+	}
+
+	if len(seqState) != len(s.exps) {
+		panic("Sequence state did not have the correct length")
+	}
+
+	s.state = seqState
+}
+
+func (s *Sequence) TrackState(t bool) {
+	for _, exp := range s.exps {
+		exp.TrackState(t)
+	}
+}
+
 // Implements Expansion Scan method
 func (s *Sequence) Scan(p Processor) {
-	for _, exp := range s.exps {
+	for i, exp := range s.exps {
+		if s.state != nil {
+			exp.SetState(s.state[i])
+		}
+
 		exp.Scan(p)
 	}
 }
