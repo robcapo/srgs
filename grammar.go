@@ -146,13 +146,12 @@ func (g *Grammar) GetMatch(str string, p Processor) error {
 		if len(str) == 0 {
 			break
 		}
-
 		str, err = g.Root.Next()
 	}
 
 	p.AppendTag("var scopes = [{'rules':{}}];")
 	g.Root.Scan(p)
-	p.AppendTag(fmt.Sprintf("var root = scopes[0]['rules']['%s'];", g.Root.ruleId))
+	p.AppendTag(fmt.Sprintf("root = scopes[0]['rules']['%s'];", g.Root.ruleId))
 
 	return nil
 }
