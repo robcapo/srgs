@@ -33,13 +33,13 @@ func (s *SISRProcessor) GetInstance() (string, error) {
 	js := s.script
 
 	vm := otto.New()
-	_, err := vm.Run(js)
+	_, err := vm.Run("var root;\n" + js)
 
 	if err != nil {
 		return "", err
 	}
 
-	output, err := vm.Run("root.out")
+	output, err := vm.Run("root ? root.out : 'No Match Found'")
 	if err != nil {
 		return "", err
 	}
