@@ -43,8 +43,8 @@ func (it *Item) Next() (string, error) {
 		str, err := it.child.Next()
 
 		if err == nil {
-			if it.trackState {
-				it.state[len(it.state)-1] = it.child.GetState()
+			if it.trackState && it.currentRepeat >= 0 {
+				it.state[it.currentRepeat] = it.child.GetState()
 			}
 			return str, err
 		}
@@ -85,7 +85,7 @@ func (it *Item) Next() (string, error) {
 }
 
 func (it *Item) Scan(processor Processor) {
-	for i := 0; i < it.currentRepeat; i++ {
+	for i := 0; i < len(it.state); i++ {
 		if it.trackState {
 			it.child.SetState(it.state[i])
 		}
