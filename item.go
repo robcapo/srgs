@@ -77,7 +77,7 @@ func (it *Item) Next() (string, error) {
 		}
 	}
 
-	if err == nil {
+	if it.currentRepeat > 0 && err == nil {
 		it.deferToChild = true
 	}
 
