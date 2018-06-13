@@ -11,6 +11,8 @@ type Item struct {
 	state      ItemState
 	trackState bool
 
+	deferToChild bool
+
 	currentRepeat int
 }
 
@@ -37,6 +39,15 @@ func (it *Item) Match(str string, mode MatchMode) {
 }
 
 func (it *Item) Next() (string, error) {
+	if it.deferToChild {
+		str, err := it.child.Next()
+
+		if err == nil {
+			return str, err
+		}
+	}
+
+	it.deferToChild = false
 	it.currentRepeat++
 
 	if it.currentRepeat > it.repeatMax {
@@ -55,13 +66,16 @@ func (it *Item) Next() (string, error) {
 		str, err = it.child.Next()
 
 		if err != nil {
-			it.currentRepeat--
 			break
 		}
 
 		if it.trackState {
 			it.state[i] = it.child.GetState()
 		}
+	}
+
+	if err == nil {
+		it.deferToChild = true
 	}
 
 	return str, err
