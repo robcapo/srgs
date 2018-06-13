@@ -43,6 +43,9 @@ func (it *Item) Next() (string, error) {
 		str, err := it.child.Next()
 
 		if err == nil {
+			if it.trackState {
+				it.state[len(it.state)-1] = it.child.GetState()
+			}
 			return str, err
 		}
 	}
