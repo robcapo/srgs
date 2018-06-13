@@ -43,8 +43,8 @@ func (it *Item) Next() (string, error) {
 		str, err := it.child.Next()
 
 		if err == nil {
-			if it.trackState && it.currentRepeat >= 0 {
-				it.state[it.currentRepeat] = it.child.GetState()
+			if it.trackState && it.currentRepeat > 0 {
+				it.state[it.currentRepeat-1] = it.child.GetState()
 			}
 			return str, err
 		}
