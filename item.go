@@ -36,6 +36,7 @@ func (it *Item) Match(str string, mode MatchMode) {
 	it.str = str
 	it.mode = mode
 	it.currentRepeat = it.repeatMin - 1
+	it.deferToChild = false
 }
 
 func (it *Item) Next() (string, error) {
