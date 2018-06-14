@@ -1,32 +1,42 @@
 package srgs
 
 type Item struct {
-	child     Expansion
+	children  []Expansion
 	repeatMin int
 	repeatMax int
 
 	str  string
 	mode MatchMode
 
-	state      ItemState
-	trackState bool
-
-	deferToChild bool
-
 	currentRepeat int
+	nextInd       int
 }
 
-func (it *Item) Copy(g *Grammar) Expansion {
+func (it *Item) Copy(refs RuleRefs) Expansion {
+	children := make([]Expansion, len(it.children))
+	for i := 0; i < len(it.children); i++ {
+		children[i] = it.children[i].Copy(refs)
+	}
+
 	return &Item{
-		child:     it.child.Copy(g),
-		repeatMin: it.repeatMin,
-		repeatMax: it.repeatMax,
+		children:      children,
+		repeatMin:     it.repeatMin,
+		repeatMax:     it.repeatMax,
+		str:           it.str,
+		mode:          it.mode,
+		currentRepeat: it.currentRepeat,
+		nextInd:       it.nextInd,
 	}
 }
 
-func NewItem(child Expansion, repeatMin, repeatMax int) *Item {
+func NewItem(child Expansion, repeatMin, repeatMax int, r RuleRefs) *Item {
+	children := make([]Expansion, repeatMax)
+	for i := 0; i < len(children); i++ {
+		children[i] = child.Copy(r)
+	}
+
 	return &Item{
-		child:     child,
+		children:  children,
 		repeatMin: repeatMin,
 		repeatMax: repeatMax,
 	}
@@ -35,82 +45,56 @@ func NewItem(child Expansion, repeatMin, repeatMax int) *Item {
 func (it *Item) Match(str string, mode MatchMode) {
 	it.str = str
 	it.mode = mode
-	it.currentRepeat = it.repeatMin - 1
-	it.deferToChild = false
+
+	it.currentRepeat = it.repeatMin
+	it.nextInd = 0
+
+	it.children[0].Match(str, mode)
 }
 
 func (it *Item) Next() (string, error) {
-	if it.deferToChild {
-		str, err := it.child.Next()
-
-		if err == nil {
-			if it.trackState && it.currentRepeat > 0 {
-				it.state[it.currentRepeat-1] = it.child.GetState()
-			}
-			return str, err
-		}
-	}
-
-	it.deferToChild = false
-	it.currentRepeat++
-
-	if it.currentRepeat > it.repeatMax {
-		it.currentRepeat--
+	if it.nextInd < 0 {
 		return "", NoMatch
 	}
 
-	if it.trackState {
-		it.state = make(ItemState, it.currentRepeat)
-	}
-
-	var str = it.str
+	var str string
 	var err error
-	for i := 0; i < it.currentRepeat; i++ {
-		it.child.Match(str, it.mode)
-		str, err = it.child.Next()
+
+	for i := it.nextInd; i < it.currentRepeat; i++ {
+		str, err = it.children[i].Next()
 
 		if err != nil {
-			break
+			it.nextInd--
+			return it.Next()
 		}
 
-		if it.trackState {
-			it.state[i] = it.child.GetState()
+		if i+1 < len(it.children) {
+			it.nextInd = i + 1
+			it.children[it.nextInd].Match(str, it.mode)
 		}
 	}
 
-	if it.currentRepeat > 0 && err == nil {
-		it.deferToChild = true
+	str, err = it.children[it.currentRepeat].Next()
+
+	if err != nil {
+		it.currentRepeat--
+		it.nextInd = it.currentRepeat
+
+		if it.currentRepeat < it.repeatMin {
+			it.currentRepeat = it.repeatMin
+		}
+	}
+
+	if it.currentRepeat+1 < len(it.children) {
+		it.currentRepeat++
+		it.children[it.currentRepeat].Match(str, it.mode)
 	}
 
 	return str, err
 }
 
 func (it *Item) Scan(processor Processor) {
-	for i := 0; i < len(it.state); i++ {
-		if it.trackState {
-			it.child.SetState(it.state[i])
-		}
-		it.child.Scan(processor)
+	for i := 0; i < it.currentRepeat; i++ {
+		it.children[i].Scan(processor)
 	}
-}
-
-func (it *Item) SetState(s State) {
-	state, ok := s.(ItemState)
-
-	if !ok {
-		panic("Got invalid state. Expecting ItemState")
-	}
-
-	it.currentRepeat = len(state)
-
-	it.state = state
-}
-
-func (it *Item) GetState() State {
-	return it.state
-}
-
-func (it *Item) TrackState(t bool) {
-	it.trackState = t
-	it.child.TrackState(t)
 }

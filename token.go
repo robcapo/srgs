@@ -1,9 +1,5 @@
 package srgs
 
-import (
-	"fmt"
-)
-
 type Token struct {
 	token string
 
@@ -13,8 +9,13 @@ type Token struct {
 	called bool
 }
 
-func (t *Token) Copy(g *Grammar) Expansion {
-	return &Token{token: t.token}
+func (t *Token) Copy(r RuleRefs) Expansion {
+	return &Token{
+		token:  t.token,
+		str:    t.str,
+		mode:   t.mode,
+		called: t.called,
+	}
 }
 
 func NewToken(str string) *Token {
@@ -72,11 +73,7 @@ func (t *Token) Next() (string, error) {
 	return "", NoMatch
 }
 
-func (t *Token) SetState(_ State)  {}
-func (t *Token) GetState() State   { return nil }
-func (t *Token) TrackState(_ bool) {}
-
 func (t *Token) Scan(p Processor) {
 	p.AppendString(t.token)
-	p.AppendTag(fmt.Sprintf("scopes[scopes.length-1]['raw'] = scopes[scopes.length-1]['raw'] ? scopes[scopes.length-1]['raw'] + ' %s' : '%s';", t.token, t.token))
+
 }

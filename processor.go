@@ -1,6 +1,7 @@
 package srgs
 
 import (
+	"fmt"
 	"github.com/robertkrimen/otto"
 	"strings"
 )
@@ -27,6 +28,11 @@ func (s *SimpleProcessor) GetInstance() (string, error) { return s.script, nil }
 
 type SISRProcessor struct {
 	SimpleProcessor
+}
+
+func (s *SISRProcessor) AppendString(str string) {
+	s.SimpleProcessor.AppendString(str)
+	s.AppendTag(fmt.Sprintf("scopes[scopes.length-1]['raw'] = scopes[scopes.length-1]['raw'] ? scopes[scopes.length-1]['raw'] + ' %s' : '%s';", str, str))
 }
 
 func (s *SISRProcessor) GetInstance() (string, error) {

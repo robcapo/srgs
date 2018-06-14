@@ -26,10 +26,6 @@ func (t *Tag) Next() (string, error) {
 	return t.match, nil
 }
 
-func (t *Tag) SetState(_ State)  {}
-func (t *Tag) GetState() State   { return nil }
-func (t *Tag) TrackState(_ bool) {}
-
 func (t *Tag) Scan(p Processor) {
 	p.AppendTag(`
 (function () {
@@ -43,6 +39,10 @@ func (t *Tag) Scan(p Processor) {
 	scopes[scopes.length-1]['out'] = out;
 })();`)
 }
-func (t *Tag) Copy(g *Grammar) Expansion {
-	return &Tag{text: t.text}
+func (t *Tag) Copy(r RuleRefs) Expansion {
+	return &Tag{
+		text:   t.text,
+		match:  t.match,
+		called: t.called,
+	}
 }
