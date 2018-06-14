@@ -9,6 +9,7 @@ type Item struct {
 	mode MatchMode
 
 	nextInd int
+	scanInd int
 }
 
 func (it *Item) Copy(refs RuleRefs) Expansion {
@@ -28,8 +29,9 @@ func (it *Item) Copy(refs RuleRefs) Expansion {
 }
 
 func NewItem(child Expansion, repeatMin, repeatMax int, r RuleRefs) *Item {
-	children := make([]Expansion, repeatMax)
-	for i := 0; i < len(children); i++ {
+	children := make([]Expansion, repeatMax+1)
+	children[0] = NewToken("")
+	for i := 1; i < len(children); i++ {
 		children[i] = child.Copy(r)
 	}
 
@@ -58,7 +60,7 @@ func (it *Item) Next() (string, error) {
 	var err error
 
 	// loop all the way up to the child right before the min-repeat
-	for i := it.nextInd; i < it.repeatMin-1; i++ {
+	for i := it.nextInd; i < it.repeatMin; i++ {
 		str, err = it.children[i].Next()
 
 		if err != nil {
@@ -101,6 +103,8 @@ func (it *Item) Next() (string, error) {
 		return str2, err2
 	}
 
+	it.scanInd = it.nextInd
+
 	if it.nextInd+1 < len(it.children) {
 		it.nextInd++
 		it.children[it.nextInd].Match(str, it.mode)
@@ -110,7 +114,7 @@ func (it *Item) Next() (string, error) {
 }
 
 func (it *Item) Scan(processor Processor) {
-	for i := 0; i < it.nextInd+1; i++ {
+	for i := 1; i <= it.scanInd; i++ {
 		it.children[i].Scan(processor)
 	}
 }

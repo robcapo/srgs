@@ -35,6 +35,10 @@ func (t *Token) Next() (string, error) {
 
 	t.called = true
 
+	if t.token == "" {
+		return t.str, nil
+	}
+
 	lent := len(t.token)
 	lens := len(t.str)
 
