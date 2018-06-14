@@ -60,7 +60,7 @@ func (it *Item) Next() (string, error) {
 	var str string
 	var err error
 
-	for i := it.nextInd; i < it.currentRepeat; i++ {
+	for i := it.nextInd; i < it.repeatMin; i++ {
 		str, err = it.children[i].Next()
 
 		if err != nil {
