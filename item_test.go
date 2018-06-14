@@ -37,6 +37,6 @@ func TestItem_MatchRepeatRange(t *testing.T) {
 	assert.Empty(str)
 	assert.Nil(err)
 	_, err = item.Next()
-	assert.Equal(PrefixOnly, err)
+	assert.Equal(NoMatch, err)
 
 }

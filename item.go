@@ -57,15 +57,27 @@ func (it *Item) Next() (string, error) {
 		return "", NoMatch
 	}
 
-	var str string
+	var str = it.str
 	var err error
 
-	for i := it.nextInd; i < it.repeatMin; i++ {
+	// loop all the way up to the child right before the min-repeat
+	for i := it.nextInd; i < it.repeatMin-1; i++ {
 		str, err = it.children[i].Next()
 
 		if err != nil {
 			it.nextInd--
-			return it.Next()
+
+			str2, err2 := it.Next()
+
+			if err2 == nil {
+				return str2, err2
+			}
+
+			if err == PrefixOnly {
+				return str, err
+			}
+
+			return str2, err2
 		}
 
 		if i+1 < len(it.children) {
@@ -74,7 +86,9 @@ func (it *Item) Next() (string, error) {
 		}
 	}
 
-	str, err = it.children[it.currentRepeat].Next()
+	if it.currentRepeat > 0 {
+		str, err = it.children[it.currentRepeat-1].Next()
+	}
 
 	if err != nil {
 		it.currentRepeat--
@@ -85,9 +99,9 @@ func (it *Item) Next() (string, error) {
 		}
 	}
 
-	if it.currentRepeat+1 < len(it.children) {
-		it.currentRepeat++
+	if it.currentRepeat < len(it.children) {
 		it.children[it.currentRepeat].Match(str, it.mode)
+		it.currentRepeat++
 	}
 
 	return str, err
