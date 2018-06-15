@@ -1,11 +1,13 @@
 package srgs
 
 import (
+	"fmt"
 	"strings"
 )
 
 type Garbage struct {
-	match string
+	match     string
+	scanMatch bool
 
 	currentInd int
 }
@@ -36,6 +38,10 @@ func (g *Garbage) Next() (string, error) {
 }
 
 func (g *Garbage) Copy(r RuleRefs) Expansion {
-	return &Garbage{match: g.match, currentInd: g.currentInd}
+	return &Garbage{match: g.match, currentInd: g.currentInd, scanMatch: g.scanMatch}
 }
-func (g *Garbage) Scan(processor Processor) {}
+func (g *Garbage) Scan(processor Processor) {
+	processor.AppendTag(fmt.Sprintf(`
+scopes[scopes.length-1]['GARBAGE'] = "%s";
+`, g.match[:g.currentInd]))
+}

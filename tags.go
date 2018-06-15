@@ -32,6 +32,7 @@ func (t *Tag) Scan(p Processor) {
 	var rules = scopes[scopes.length-1]['rules'];
 	var out = scopes[scopes.length-1]['out'];
 	var raw = scopes[scopes.length-1]['raw'];
+	var GARBAGE = scopes[scopes.length-1]['GARBAGE'];
 `)
 	p.AppendTag(t.text)
 

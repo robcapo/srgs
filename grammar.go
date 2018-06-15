@@ -236,7 +236,12 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 				special := el.SelectAttrValue("special", "")
 
 				if special == "GARBAGE" {
-					out.exps = append(out.exps, new(Garbage))
+					tempGarbage := new(Garbage)
+					out.exps = append(out.exps, tempGarbage)
+					scan := el.SelectAttrValue("scan-match", "")
+					if scan == "true" {
+						tempGarbage.scanMatch = true
+					}
 					continue
 				}
 

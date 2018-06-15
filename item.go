@@ -5,6 +5,7 @@ type Item struct {
 	repeatMin int
 	repeatMax int
 
+	saveString string
 	str  string
 	mode MatchMode
 
@@ -45,7 +46,7 @@ func NewItem(child Expansion, repeatMin, repeatMax int, r RuleRefs) *Item {
 func (it *Item) Match(str string, mode MatchMode) {
 	it.str = str
 	it.mode = mode
-
+	it.saveString = str
 	it.nextInd = 0
 
 	it.children[0].Match(str, mode)
@@ -56,45 +57,44 @@ func (it *Item) Next() (string, error) {
 		return "", NoMatch
 	}
 
+	var str string
+	var err error
+
 	// loop all the way up to the child right before the min-repeat
 	for {
-		if it.nextInd >= it.repeatMin {
-			break
-		}
-
-		str, err := it.next()
+		str, err = it.children[it.nextInd].Next()
 
 		if err != nil {
-			return str, err
-		}
-	}
+			it.nextInd--
 
-	return it.next()
-}
+			str2, err2 := it.Next()
 
-func (it *Item) next() (string, error) {
-	str, err := it.children[it.nextInd].Next()
+			if err2 == nil {
+				return str2, err2
+			}
 
-	if err != nil {
-		it.nextInd--
+			if err == PrefixOnly {
+				return str, err
+			}
 
-		str2, err2 := it.Next()
-
-		if err2 == nil {
 			return str2, err2
 		}
 
-		if err == PrefixOnly {
-			return str, err
+		breaker := false
+		if it.nextInd >= it.repeatMin {
+			breaker = true
 		}
 
-		return str2, err2
-	}
+		it.scanInd = it.nextInd
+		if it.nextInd+1 < len(it.children) && (str != it.saveString || it.nextInd == 0){
+			it.saveString = str
+			it.nextInd++
+			it.children[it.nextInd].Match(str, it.mode)	
+		}
 
-	it.scanInd = it.nextInd
-	if it.nextInd+1 < len(it.children) {
-		it.nextInd++
-		it.children[it.nextInd].Match(str, it.mode)
+		if breaker {
+			break
+		}
 	}
 
 	return str, err
