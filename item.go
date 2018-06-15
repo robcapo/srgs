@@ -56,12 +56,13 @@ func (it *Item) Next() (string, error) {
 		return "", NoMatch
 	}
 
-	var str = it.str
-	var err error
-
 	// loop all the way up to the child right before the min-repeat
-	for i := it.nextInd; i < it.repeatMin; i++ {
-		str, err = it.children[i].Next()
+	for {
+		if it.nextInd >= it.repeatMin {
+			break
+		}
+
+		str, err := it.children[it.nextInd].Next()
 
 		if err != nil {
 			it.nextInd--
@@ -79,13 +80,15 @@ func (it *Item) Next() (string, error) {
 			return str2, err2
 		}
 
-		if i+1 < len(it.children) {
-			it.nextInd = i + 1
+		it.scanInd = it.nextInd
+		if it.nextInd+1 < len(it.children) {
+			it.nextInd++
 			it.children[it.nextInd].Match(str, it.mode)
 		}
+
 	}
 
-	str, err = it.children[it.nextInd].Next()
+	str, err := it.children[it.nextInd].Next()
 
 	if err != nil {
 		it.nextInd--
@@ -104,7 +107,34 @@ func (it *Item) Next() (string, error) {
 	}
 
 	it.scanInd = it.nextInd
+	if it.nextInd+1 < len(it.children) {
+		it.nextInd++
+		it.children[it.nextInd].Match(str, it.mode)
+	}
 
+	return str, err
+}
+
+func (it *Item) next() (string, error) {
+	str, err := it.children[it.nextInd].Next()
+
+	if err != nil {
+		it.nextInd--
+
+		str2, err2 := it.Next()
+
+		if err2 == nil {
+			return str2, err2
+		}
+
+		if err == PrefixOnly {
+			return str, err
+		}
+
+		return str2, err2
+	}
+
+	it.scanInd = it.nextInd
 	if it.nextInd+1 < len(it.children) {
 		it.nextInd++
 		it.children[it.nextInd].Match(str, it.mode)
