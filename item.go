@@ -62,57 +62,14 @@ func (it *Item) Next() (string, error) {
 			break
 		}
 
-		str, err := it.children[it.nextInd].Next()
+		str, err := it.next()
 
 		if err != nil {
-			it.nextInd--
-
-			str2, err2 := it.Next()
-
-			if err2 == nil {
-				return str2, err2
-			}
-
-			if err == PrefixOnly {
-				return str, err
-			}
-
-			return str2, err2
-		}
-
-		it.scanInd = it.nextInd
-		if it.nextInd+1 < len(it.children) {
-			it.nextInd++
-			it.children[it.nextInd].Match(str, it.mode)
-		}
-
-	}
-
-	str, err := it.children[it.nextInd].Next()
-
-	if err != nil {
-		it.nextInd--
-
-		str2, err2 := it.Next()
-
-		if err2 == nil {
-			return str2, err2
-		}
-
-		if err == PrefixOnly {
 			return str, err
 		}
-
-		return str2, err2
 	}
 
-	it.scanInd = it.nextInd
-	if it.nextInd+1 < len(it.children) {
-		it.nextInd++
-		it.children[it.nextInd].Match(str, it.mode)
-	}
-
-	return str, err
+	return it.next()
 }
 
 func (it *Item) next() (string, error) {
