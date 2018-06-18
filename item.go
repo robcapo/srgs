@@ -1,30 +1,43 @@
 package srgs
 
 type Item struct {
-	child     Expansion
+	children  []Expansion
 	repeatMin int
 	repeatMax int
 
+	saveString string
 	str  string
 	mode MatchMode
 
-	state      ItemState
-	trackState bool
-
-	currentRepeat int
+	nextInd int
+	scanInd int
 }
 
-func (it *Item) Copy(g *Grammar) Expansion {
+func (it *Item) Copy(refs RuleRefs) Expansion {
+	children := make([]Expansion, len(it.children))
+	for i := 0; i < len(it.children); i++ {
+		children[i] = it.children[i].Copy(refs)
+	}
+
 	return &Item{
-		child:     it.child.Copy(g),
+		children:  children,
 		repeatMin: it.repeatMin,
 		repeatMax: it.repeatMax,
+		str:       it.str,
+		mode:      it.mode,
+		nextInd:   it.nextInd,
 	}
 }
 
-func NewItem(child Expansion, repeatMin, repeatMax int) *Item {
+func NewItem(child Expansion, repeatMin, repeatMax int, r RuleRefs) *Item {
+	children := make([]Expansion, repeatMax+1)
+	children[0] = NewToken("")
+	for i := 1; i < len(children); i++ {
+		children[i] = child.Copy(r)
+	}
+
 	return &Item{
-		child:     child,
+		children:  children,
 		repeatMin: repeatMin,
 		repeatMax: repeatMax,
 	}
@@ -33,34 +46,54 @@ func NewItem(child Expansion, repeatMin, repeatMax int) *Item {
 func (it *Item) Match(str string, mode MatchMode) {
 	it.str = str
 	it.mode = mode
-	it.currentRepeat = it.repeatMin - 1
+	it.saveString = str
+	it.nextInd = 0
+
+	it.children[0].Match(str, mode)
 }
 
 func (it *Item) Next() (string, error) {
-	it.currentRepeat++
-
-	if it.currentRepeat > it.repeatMax {
-		it.currentRepeat--
+	if it.nextInd < 0 {
 		return "", NoMatch
 	}
 
-	if it.trackState {
-		it.state = make(ItemState, it.currentRepeat)
-	}
-
-	var str = it.str
+	var str string
 	var err error
-	for i := 0; i < it.currentRepeat; i++ {
-		it.child.Match(str, it.mode)
-		str, err = it.child.Next()
+
+	// loop all the way up to the child right before the min-repeat
+	for {
+		str, err = it.children[it.nextInd].Next()
 
 		if err != nil {
-			it.currentRepeat--
-			break
+			it.nextInd--
+
+			str2, err2 := it.Next()
+
+			if err2 == nil {
+				return str2, err2
+			}
+
+			if err == PrefixOnly {
+				return str, err
+			}
+
+			return str2, err2
 		}
 
-		if it.trackState {
-			it.state[i] = it.child.GetState()
+		breaker := false
+		if it.nextInd >= it.repeatMin {
+			breaker = true
+		}
+
+		it.scanInd = it.nextInd
+		if it.nextInd+1 < len(it.children) && (str != it.saveString || it.nextInd == 0){
+			it.saveString = str
+			it.nextInd++
+			it.children[it.nextInd].Match(str, it.mode)	
+		}
+
+		if breaker {
+			break
 		}
 	}
 
@@ -68,31 +101,7 @@ func (it *Item) Next() (string, error) {
 }
 
 func (it *Item) Scan(processor Processor) {
-	for i := 0; i < it.currentRepeat; i++ {
-		if it.trackState {
-			it.child.SetState(it.state[i])
-		}
-		it.child.Scan(processor)
+	for i := 1; i <= it.scanInd; i++ {
+		it.children[i].Scan(processor)
 	}
-}
-
-func (it *Item) SetState(s State) {
-	state, ok := s.(ItemState)
-
-	if !ok {
-		panic("Got invalid state. Expecting ItemState")
-	}
-
-	it.currentRepeat = len(state)
-
-	it.state = state
-}
-
-func (it *Item) GetState() State {
-	return it.state
-}
-
-func (it *Item) TrackState(t bool) {
-	it.trackState = t
-	it.child.TrackState(t)
 }

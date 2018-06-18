@@ -7,12 +7,12 @@ type Alternative struct {
 	currentInd int
 }
 
-func (a *Alternative) Copy(g *Grammar) Expansion {
+func (a *Alternative) Copy(r RuleRefs) Expansion {
 	out := new(Alternative)
 	out.items = make([]Expansion, len(a.items))
 
 	for ind, e := range a.items {
-		out.items[ind] = e.Copy(g)
+		out.items[ind] = e.Copy(r)
 	}
 
 	return out
@@ -51,29 +51,4 @@ func (a *Alternative) Next() (string, error) {
 
 func (a *Alternative) Scan(p Processor) {
 	a.items[a.currentInd].Scan(p)
-}
-
-func (a *Alternative) TrackState(t bool) {
-	for _, exp := range a.items {
-		exp.TrackState(t)
-	}
-}
-
-func (a *Alternative) GetState() State {
-	return AlternativeState{
-		index: a.currentInd,
-		state: a.items[a.currentInd].GetState(),
-	}
-}
-
-func (a *Alternative) SetState(s State) {
-	state, ok := s.(AlternativeState)
-
-	if !ok {
-		panic("Got an invalid date in alternative")
-	}
-
-	a.currentInd = state.index
-
-	a.items[a.currentInd].SetState(state.state)
 }

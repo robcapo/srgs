@@ -9,7 +9,7 @@ func TestItem_MatchRepeatRange(t *testing.T) {
 	assert := assert.New(t)
 
 	tok := NewToken("rob")
-	item := NewItem(tok, 3, 5)
+	item := NewItem(tok, 3, 5, make(RuleRefs))
 
 	item.Match("rob", ModeExact)
 	_, err := item.Next()
@@ -37,6 +37,6 @@ func TestItem_MatchRepeatRange(t *testing.T) {
 	assert.Empty(str)
 	assert.Nil(err)
 	_, err = item.Next()
-	assert.Equal(PrefixOnly, err)
+	assert.Equal(NoMatch, err)
 
 }

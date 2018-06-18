@@ -7,18 +7,20 @@ type Sequence struct {
 	str  string
 	mode MatchMode
 
-	state SequenceState
-
 	nextInd int
 }
 
 // Implements Expansion Copy method
-func (s *Sequence) Copy(g *Grammar) Expansion {
-	out := new(Sequence)
-	out.exps = make([]Expansion, len(s.exps))
+func (s *Sequence) Copy(r RuleRefs) Expansion {
+	out := &Sequence{
+		exps:    make([]Expansion, len(s.exps)),
+		str:     s.str,
+		mode:    s.mode,
+		nextInd: s.nextInd,
+	}
 
 	for ind, e := range s.exps {
-		out.exps[ind] = e.Copy(g)
+		out.exps[ind] = e.Copy(r)
 	}
 
 	return out
@@ -60,43 +62,9 @@ func (s *Sequence) Next() (string, error) {
 	return str, err
 }
 
-func (s *Sequence) GetState() State {
-	state := make(SequenceState, len(s.exps))
-
-	for i, exp := range s.exps {
-		state[i] = exp.GetState()
-	}
-
-	return state
-}
-
-func (s *Sequence) SetState(state State) {
-	seqState, ok := state.(SequenceState)
-
-	if !ok {
-		panic("Expecting sequence state")
-	}
-
-	if len(seqState) != len(s.exps) {
-		panic("Sequence state did not have the correct length")
-	}
-
-	s.state = seqState
-}
-
-func (s *Sequence) TrackState(t bool) {
-	for _, exp := range s.exps {
-		exp.TrackState(t)
-	}
-}
-
 // Implements Expansion Scan method
 func (s *Sequence) Scan(p Processor) {
-	for i, exp := range s.exps {
-		if s.state != nil {
-			exp.SetState(s.state[i])
-		}
-
+	for _, exp := range s.exps {
 		exp.Scan(p)
 	}
 }

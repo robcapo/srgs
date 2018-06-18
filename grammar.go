@@ -30,19 +30,9 @@ var (
 
 // An expansion is any part of a grammar that can match a string
 type Expansion interface {
-	// Check if this expansion covers part or all of string `str`.
-	// Returns a consumed version of str, with the part that this expansion covers removed from the beginning.
-	// Uses a pre-allocated stack to push the Expansions involved in consuming the str
-	//
-	// May return two errors:
-	//
-	// - PrefixOnly if the entire text is only a prefix in the expansion.
-	// - NoMatch if the string does not match the expansion at all
-	//ConsumeStack(str string, stack *stack.Stack) (string, int, error)
-
 	// Set the string to match on the expansion. Match either in ModePrefix (return nil error as soon as a prefix is
 	// found) or ModeExact (return nil only if there is an exact match -- otherwise return PrefixOnly error)
-	Match(str string, mode MatchMode)
+	Match(string, MatchMode)
 
 	// If there are other ways of matching the prefix (e.g. if multiple alternatives or repeats match), return the
 	// next version of the consumed string. Otherwise return "" and Exhausted error
@@ -51,19 +41,10 @@ type Expansion interface {
 	// Append this expansion to a processor. This will be enable the Processor to provide the output for a given path
 	Scan(Processor)
 
-	// Get the state of an Expansion (this will be used from a parent to child to get the state that matched)
-	GetState() State
-
-	// Set the state of an Expansion (this will be used from a parent to child to Scan appropriately
-	SetState(State)
-
-	// Set whether the Expansion should keep track of its state during matching
-	TrackState(bool)
-
 	// Returns a copy of the expansion. This is needed because expansions implementations are stateful, and a single
 	// path through a grammar may reference the same rule multiple times. In that case, the states of each reference
 	// must be independent.
-	Copy(g *Grammar) Expansion
+	Copy(RuleRefs) Expansion
 }
 
 // State is the internal representation of an Expansion which matched an utterance. This is used to determine the
@@ -86,7 +67,7 @@ type Grammar struct {
 
 	root     Expansion
 	rules    Rules
-	ruleRefs map[string][]*RuleRef
+	ruleRefs RuleRefs
 }
 
 // Creates a new grammar
@@ -134,7 +115,6 @@ func (g *Grammar) HasMatch(str string) bool {
 
 // Uses a processor to find a match and scan the match into the processor for SISR
 func (g *Grammar) GetMatch(str string, p Processor) error {
-	g.Root.TrackState(true)
 	g.Root.Match(str, ModeExact)
 	str, err := g.Root.Next()
 
@@ -200,7 +180,7 @@ func (g *Grammar) LoadXml(xml string) error {
 
 		if refs, ok := g.ruleRefs[id]; ok {
 			for _, ref := range refs {
-				ref.rule = exp.Copy(g)
+				ref.rule = exp.Copy(g.ruleRefs)
 			}
 
 			delete(g.ruleRefs, id)
@@ -256,7 +236,12 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 				special := el.SelectAttrValue("special", "")
 
 				if special == "GARBAGE" {
-					out.exps = append(out.exps, new(Garbage))
+					tempGarbage := new(Garbage)
+					out.exps = append(out.exps, tempGarbage)
+					scan := el.SelectAttrValue("scan-match", "")
+					if scan == "true" {
+						tempGarbage.scanMatch = true
+					}
 					continue
 				}
 
@@ -276,7 +261,7 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 				out.exps = append(out.exps, ruleRef)
 
 				if rule, ok := g.rules[ruleRef.ruleId]; ok {
-					ruleRef.rule = rule.Copy(g)
+					ruleRef.rule = rule.Copy(g.ruleRefs)
 				} else {
 					g.ruleRefs[ruleRef.ruleId] = append(g.ruleRefs[ruleRef.ruleId], ruleRef)
 				}
@@ -335,7 +320,7 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 				return nil, err
 			}
 			if minMax[1] == "" {
-				max = 9999
+				return nil, errors.New(`upper bounds of item repeats must be explicitly stated (e.g. please do not use repeat="1-")`)
 			} else if max, err = strconv.Atoi(minMax[1]); err != nil {
 				return nil, err
 			}
@@ -343,7 +328,7 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 			return nil, errors.New("invalid repeat")
 		}
 
-		return NewItem(out, min, max), nil
+		return NewItem(out, min, max, g.ruleRefs), nil
 	}
 
 	return out, nil

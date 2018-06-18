@@ -5,6 +5,7 @@ import (
 )
 
 type Rules map[string]Expansion
+type RuleRefs map[string][]*RuleRef
 
 type RuleRef struct {
 	rule   Expansion
@@ -17,28 +18,16 @@ func (r *RuleRef) Match(str string, mode MatchMode) {
 func (r *RuleRef) Next() (string, error) {
 	return r.rule.Next()
 }
-func (r *RuleRef) Copy(g *Grammar) Expansion {
+func (r *RuleRef) Copy(rr RuleRefs) Expansion {
 	ref := new(RuleRef)
 	ref.ruleId = r.ruleId
 	if r.rule != nil {
-		ref.rule = r.rule.Copy(g)
+		ref.rule = r.rule.Copy(rr)
 	}
 
-	g.ruleRefs[ref.ruleId] = append(g.ruleRefs[ref.ruleId], ref)
+	rr[ref.ruleId] = append(rr[ref.ruleId], ref)
 
 	return ref
-}
-
-func (r *RuleRef) GetState() State {
-	return r.rule.GetState()
-}
-
-func (r *RuleRef) SetState(s State) {
-	r.rule.SetState(s)
-}
-
-func (r *RuleRef) TrackState(t bool) {
-	r.rule.TrackState(t)
 }
 
 func (r *RuleRef) Scan(p Processor) {
