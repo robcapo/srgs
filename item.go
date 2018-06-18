@@ -5,9 +5,9 @@ type Item struct {
 	repeatMin int
 	repeatMax int
 
-	saveString string
-	str  string
-	mode MatchMode
+	saveString []string
+	str        string
+	mode       MatchMode
 
 	nextInd int
 	scanInd int
@@ -20,12 +20,13 @@ func (it *Item) Copy(refs RuleRefs) Expansion {
 	}
 
 	return &Item{
-		children:  children,
-		repeatMin: it.repeatMin,
-		repeatMax: it.repeatMax,
-		str:       it.str,
-		mode:      it.mode,
-		nextInd:   it.nextInd,
+		children:   children,
+		repeatMin:  it.repeatMin,
+		repeatMax:  it.repeatMax,
+		str:        it.str,
+		mode:       it.mode,
+		nextInd:    it.nextInd,
+		saveString: it.saveString,
 	}
 }
 
@@ -37,18 +38,18 @@ func NewItem(child Expansion, repeatMin, repeatMax int, r RuleRefs) *Item {
 	}
 
 	return &Item{
-		children:  children,
-		repeatMin: repeatMin,
-		repeatMax: repeatMax,
+		children:   children,
+		repeatMin:  repeatMin,
+		repeatMax:  repeatMax,
+		saveString: make([]string, repeatMax+1),
 	}
 }
 
 func (it *Item) Match(str string, mode MatchMode) {
 	it.str = str
 	it.mode = mode
-	it.saveString = str
 	it.nextInd = 0
-
+	it.saveString[0] = ""
 	it.children[0].Match(str, mode)
 }
 
@@ -86,10 +87,11 @@ func (it *Item) Next() (string, error) {
 		}
 
 		it.scanInd = it.nextInd
-		if it.nextInd+1 < len(it.children) && (str != it.saveString || it.nextInd == 0){
-			it.saveString = str
+		if it.nextInd+1 < len(it.children) && str != it.saveString[it.nextInd] {
+			it.saveString[it.nextInd] = str
 			it.nextInd++
-			it.children[it.nextInd].Match(str, it.mode)	
+			it.saveString[it.nextInd] = str
+			it.children[it.nextInd].Match(str, it.mode)
 		}
 
 		if breaker {
