@@ -78,6 +78,7 @@ func NewGrammar() *Grammar {
 // Returns whether a specific string is a prefix of the grammar. For example, a grammar that matches the string
 // "i want to go to the park", will also return true for HasPrefix("i want to g")
 func (g *Grammar) HasPrefix(str string) bool {
+	str = strings.ToLower(str)
 	g.Root.Match(str, ModePrefix)
 	str, err := g.Root.Next()
 
@@ -97,6 +98,7 @@ func (g *Grammar) HasPrefix(str string) bool {
 // Returns whether a specific string is an exact match for the grammar. Note that this means the string is not a prefix
 // and it is also not longer than the grammar.
 func (g *Grammar) HasMatch(str string) bool {
+	str = strings.ToLower(str)
 	g.Root.Match(str, ModeExact)
 	str, err := g.Root.Next()
 
@@ -115,6 +117,7 @@ func (g *Grammar) HasMatch(str string) bool {
 
 // Uses a processor to find a match and scan the match into the processor for SISR
 func (g *Grammar) GetMatch(str string, p Processor) error {
+	str = strings.ToLower(str)
 	g.Root.Match(str, ModeExact)
 	str, err := g.Root.Next()
 
@@ -339,5 +342,5 @@ func decodeCharData(data string) Expansion {
 		return nil
 	}
 
-	return NewToken(data)
+	return NewToken(strings.ToLower(data))
 }
