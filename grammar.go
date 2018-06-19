@@ -36,7 +36,7 @@ type Expansion interface {
 
 	// If there are other ways of matching the prefix (e.g. if multiple alternatives or repeats match), return the
 	// next version of the consumed string. Otherwise return "" and Exhausted error
-	Next() (string, error)
+	Next() (string, float64, error)
 
 	// Append this expansion to a processor. This will be enable the Processor to provide the output for a given path
 	Scan(Processor)
@@ -77,21 +77,21 @@ func NewGrammar() *Grammar {
 
 // Returns whether a specific string is a prefix of the grammar. For example, a grammar that matches the string
 // "i want to go to the park", will also return true for HasPrefix("i want to g")
-func (g *Grammar) HasPrefix(str string) bool {
+func (g *Grammar) HasPrefix(str string) float64 {
 	str = strings.ToLower(str)
 	g.Root.Match(str, ModePrefix)
-	str, err := g.Root.Next()
+	str, matchProb, err := g.Root.Next()
 
 	for {
 		if err != nil {
-			return false
+			return 0
 		}
 
 		if len(str) == 0 {
-			return true
+			return matchProb
 		}
 
-		str, err = g.Root.Next()
+		str, matchProb, err = g.Root.Next()
 	}
 }
 
@@ -100,7 +100,7 @@ func (g *Grammar) HasPrefix(str string) bool {
 func (g *Grammar) HasMatch(str string) bool {
 	str = strings.ToLower(str)
 	g.Root.Match(str, ModeExact)
-	str, err := g.Root.Next()
+	str, _, err := g.Root.Next()
 
 	for {
 		if err != nil {
@@ -111,7 +111,7 @@ func (g *Grammar) HasMatch(str string) bool {
 			return true
 		}
 
-		str, err = g.Root.Next()
+		str, _, err = g.Root.Next()
 	}
 }
 
@@ -119,7 +119,7 @@ func (g *Grammar) HasMatch(str string) bool {
 func (g *Grammar) GetMatch(str string, p Processor) error {
 	str = strings.ToLower(str)
 	g.Root.Match(str, ModeExact)
-	str, err := g.Root.Next()
+	str, _, err := g.Root.Next()
 
 	for {
 		if err != nil {
@@ -129,7 +129,7 @@ func (g *Grammar) GetMatch(str string, p Processor) error {
 		if len(str) == 0 {
 			break
 		}
-		str, err = g.Root.Next()
+		str, _, err = g.Root.Next()
 	}
 
 	p.AppendTag("var scopes = [{'rules':{}}];")
@@ -245,6 +245,12 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 					if scan == "true" {
 						tempGarbage.scanMatch = true
 					}
+					continue
+				}
+
+				if special == "SLM" {
+					tempSLM := new(SLM)
+					out.exps = append(out.exps, tempSLM)
 					continue
 				}
 

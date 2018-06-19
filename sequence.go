@@ -37,16 +37,17 @@ func (s *Sequence) Match(str string, mode MatchMode) {
 }
 
 // Implements Expansion Next method
-func (s *Sequence) Next() (string, error) {
+func (s *Sequence) Next() (string, float64, error) {
 	if s.nextInd < 0 {
-		return "", NoMatch
+		return "", 0, NoMatch
 	}
 
 	var str string
 	var err error
+	var matchProb float64
 
 	for i := s.nextInd; i < len(s.exps); i++ {
-		str, err = s.exps[i].Next()
+		str, matchProb, err = s.exps[i].Next()
 
 		if err != nil {
 			s.nextInd--
@@ -59,7 +60,7 @@ func (s *Sequence) Next() (string, error) {
 		}
 	}
 
-	return str, err
+	return str, matchProb, err
 }
 
 // Implements Expansion Scan method

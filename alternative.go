@@ -30,23 +30,24 @@ func (a *Alternative) Match(str string, mode MatchMode) {
 		i.Match(str, mode)
 	}
 }
-func (a *Alternative) Next() (string, error) {
+func (a *Alternative) Next() (string, float64, error) {
 	outErr := NoMatch
 	for i := a.currentInd; i < len(a.items); i++ {
 		var str string
+		var matchProb float64
 		var err error
 
-		str, err = a.items[i].Next()
+		str, matchProb, err = a.items[i].Next()
 
 		if err == PrefixOnly {
 			outErr = PrefixOnly
 		} else if err == nil {
 			a.currentInd = i
-			return str, nil
+			return str, matchProb, nil
 		}
 	}
 
-	return "", outErr
+	return "", 0, outErr
 }
 
 func (a *Alternative) Scan(p Processor) {

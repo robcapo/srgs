@@ -28,15 +28,15 @@ func (t *Token) Match(str string, mode MatchMode) {
 	t.called = false
 }
 
-func (t *Token) Next() (string, error) {
+func (t *Token) Next() (string, float64, error) {
 	if t.called {
-		return "", NoMatch
+		return "", 0, NoMatch
 	}
 
 	t.called = true
 
 	if t.token == "" {
-		return t.str, nil
+		return t.str, 1, nil
 	}
 
 	lent := len(t.token)
@@ -50,31 +50,31 @@ func (t *Token) Next() (string, error) {
 	// Ensure all characters match up to their lengths
 	for i := 0; i < lim; i++ {
 		if t.str[i] != t.token[i] {
-			return "", NoMatch
+			return "", 0, NoMatch
 		}
 	}
 
 	// If they have the same length, perfect match
 	if lent == lens {
-		return "", nil
+		return "", 1, nil
 	}
 
 	// If this token is longer than the query string, query string is a prefix
 	if lent > lens {
 		if t.mode == ModePrefix {
-			return "", nil
+			return "", 1, nil
 		}
 
-		return "", PrefixOnly
+		return "", 0, PrefixOnly
 	}
 
 	// If this token is shorter than the query string, but ends on a word boundary consume it and return the rest
 	if t.str[lent] == ' ' {
-		return t.str[lent+1:], nil
+		return t.str[lent+1:], 1, nil
 	}
 
 	// Otherwise it's no match
-	return "", NoMatch
+	return "", 0, NoMatch
 }
 
 func (t *Token) Scan(p Processor) {

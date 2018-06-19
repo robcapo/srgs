@@ -15,7 +15,7 @@ type RuleRef struct {
 func (r *RuleRef) Match(str string, mode MatchMode) {
 	r.rule.Match(str, mode)
 }
-func (r *RuleRef) Next() (string, error) {
+func (r *RuleRef) Next() (string, float64, error) {
 	return r.rule.Next()
 }
 func (r *RuleRef) Copy(rr RuleRefs) Expansion {

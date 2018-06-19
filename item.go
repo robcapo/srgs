@@ -64,39 +64,44 @@ func (it *Item) Match(str string, mode MatchMode) {
 	it.children[0].Match(str, mode)
 }
 
-func (it *Item) Next() (string, error) {
+func (it *Item) Next() (string, float64, error) {
 	if it.nextInd < 0 {
-		return "", NoMatch
+		return "", 0, NoMatch
 	}
 
 	var str string
 	var err error
+	var matchProb float64
+
 	var lastSuccessfulString string
+	var lastMatchProb
 	var hadSuccess bool
 	// loop all the way up to the child right before the min-repeat
 	for {
-		str, err = it.children[it.nextInd].Next()
+		str, matchProb, err = it.children[it.nextInd].Next()
 
 		if err != nil {
 			if hadSuccess && it.repeatMode == RepeatModeGreedy {
-				return lastSuccessfulString, nil
+				return lastSuccessfulString, lastMatchProb, nil
 			}
 			it.scanInd--
 			it.nextInd--
 
-			str2, err2 := it.Next()
+			str2, matchProb2, err2 := it.Next()
 
 			if err2 == nil {
-				return str2, err2
+				return str2, matchProb2, err2
 			}
 
 			if err == PrefixOnly {
-				return str, err
+				return str, matchProb, err
 			}
 
-			return str2, err2
+			return str2, matchProb2, err2
 		}
+
 		lastSuccessfulString = str
+		lastMatchProb = matchProb
 		if it.nextInd > 0 {
 			hadSuccess = true
 		}
@@ -119,7 +124,7 @@ func (it *Item) Next() (string, error) {
 		}
 	}
 
-	return str, err
+	return str, matchProb, err
 }
 
 func (it *Item) Scan(processor Processor) {
