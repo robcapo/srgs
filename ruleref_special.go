@@ -44,4 +44,5 @@ func (g *Garbage) Scan(processor Processor) {
 	processor.AppendTag(fmt.Sprintf(`
 scopes[scopes.length-1]['GARBAGE'] = "%s";
 `, g.match[:g.currentInd]))
+	processor.AppendString(g.match[:g.currentInd])
 }

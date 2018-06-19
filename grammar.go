@@ -304,6 +304,7 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 
 	if element.Tag == "item" {
 		repeat := element.SelectAttrValue("repeat", "1-1")
+		repeatmode := RepeatMode(element.SelectAttrValue("repeat-mode", string(RepeatModeNormal)))
 
 		minMax := strings.Split(repeat, "-")
 
@@ -331,7 +332,7 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 			return nil, errors.New("invalid repeat")
 		}
 
-		return NewItem(out, min, max, g.ruleRefs), nil
+		return NewItem(out, repeatmode, min, max, g.ruleRefs), nil
 	}
 
 	return out, nil
