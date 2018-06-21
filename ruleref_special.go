@@ -28,14 +28,14 @@ func (s *SLM) Match(str string, mode MatchMode) {
 
 func (s *SLM) CallLM(str string, uri string) float64 {
 	if str != "" {
-		return .5
+		return -5.5
 	}
-	return 0
+	return -1000
 }
 
 func (s *SLM) Next() (string, float64, error) {
 	if s.currentInd == len(s.str) {
-		return "", 0, NoMatch
+		return "", -1000, NoMatch
 	}
 
 	if s.currentInd != -1 {
@@ -49,7 +49,7 @@ func (s *SLM) Next() (string, float64, error) {
 
 		matchProb := s.CallLM(s.str[s.currentInd:], s.uri)
 
-		if matchProb == 0 {
+		if matchProb <= -1000 {
 			return "", matchProb, NoMatch
 		} else {
 			s.currentInd++
@@ -59,7 +59,7 @@ func (s *SLM) Next() (string, float64, error) {
 
 	s.currentInd++
 
-	return s.str[s.currentInd:], 1, nil
+	return s.str[s.currentInd:], 0, nil
 }
 
 func (s *SLM) Copy(r RuleRefs) Expansion {
@@ -80,7 +80,7 @@ func (g *Garbage) Match(str string, mode MatchMode) {
 
 func (g *Garbage) Next() (string, float64, error) {
 	if g.currentInd == len(g.str) {
-		return "", 0, NoMatch
+		return "", -1000, NoMatch
 	}
 
 	if g.currentInd != -1 {
@@ -95,7 +95,7 @@ func (g *Garbage) Next() (string, float64, error) {
 
 	g.currentInd++
 
-	return g.str[g.currentInd:], 1, nil
+	return g.str[g.currentInd:], 0, nil
 }
 
 func (g *Garbage) Copy(r RuleRefs) Expansion {

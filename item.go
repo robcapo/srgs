@@ -14,6 +14,7 @@ type Item struct {
 	repeatMax  int
 	repeatMode RepeatMode
 
+	saveProb   []float64
 	saveString []string
 	str        string
 	mode       MatchMode
@@ -37,6 +38,7 @@ func (it *Item) Copy(refs RuleRefs) Expansion {
 		nextInd:    it.nextInd,
 		repeatMode: it.repeatMode,
 		saveString: it.saveString,
+		saveProb:   it.saveProb,
 	}
 }
 
@@ -53,6 +55,7 @@ func NewItem(child Expansion, repeatMode RepeatMode, repeatMin, repeatMax int, r
 		repeatMax:  repeatMax,
 		repeatMode: repeatMode,
 		saveString: make([]string, repeatMax+1),
+		saveProb:   make([]float64, repeatMax+1),
 	}
 }
 
@@ -61,12 +64,13 @@ func (it *Item) Match(str string, mode MatchMode) {
 	it.mode = mode
 	it.nextInd = 0
 	it.saveString[0] = ""
+	it.saveProb[0] = 0
 	it.children[0].Match(str, mode)
 }
 
 func (it *Item) Next() (string, float64, error) {
 	if it.nextInd < 0 {
-		return "", 0, NoMatch
+		return "", -1000, NoMatch
 	}
 
 	var str string

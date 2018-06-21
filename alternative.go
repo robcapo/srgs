@@ -47,7 +47,7 @@ func (a *Alternative) Next() (string, float64, error) {
 		}
 	}
 
-	return "", 0, outErr
+	return "", -1000, outErr
 }
 
 func (a *Alternative) Scan(p Processor) {

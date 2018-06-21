@@ -77,14 +77,14 @@ func NewGrammar() *Grammar {
 
 // Returns whether a specific string is a prefix of the grammar. For example, a grammar that matches the string
 // "i want to go to the park", will also return true for HasPrefix("i want to g")
-func (g *Grammar) HasPrefix(str string) float64 {
+func (g *Grammar) GetScoreForPrefix(str string) float64 {
 	str = strings.ToLower(str)
 	g.Root.Match(str, ModePrefix)
 	str, matchProb, err := g.Root.Next()
 
 	for {
 		if err != nil {
-			return 0
+			return matchProb
 		}
 
 		if len(str) == 0 {
@@ -92,6 +92,26 @@ func (g *Grammar) HasPrefix(str string) float64 {
 		}
 
 		str, matchProb, err = g.Root.Next()
+	}
+}
+
+// Returns whether a specific string is a prefix of the grammar. For example, a grammar that matches the string
+// "i want to go to the park", will also return true for HasPrefix("i want to g")
+func (g *Grammar) HasPrefix(str string) bool {
+	str = strings.ToLower(str)
+	g.Root.Match(str, ModePrefix)
+	str, _, err := g.Root.Next()
+
+	for {
+		if err != nil {
+			return false
+		}
+
+		if len(str) == 0 {
+			return true
+		}
+
+		str, _, err = g.Root.Next()
 	}
 }
 
