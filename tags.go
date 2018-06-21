@@ -40,6 +40,10 @@ func (t *Tag) Scan(p Processor) {
 	scopes[scopes.length-1]['out'] = out;
 })();`)
 }
+
+func (t *Tag) ScanIDAndMatch(s Scorer) {
+}
+
 func (t *Tag) Copy(r RuleRefs) Expansion {
 	return &Tag{
 		text:   t.text,

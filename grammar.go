@@ -45,20 +45,9 @@ type Expansion interface {
 	// path through a grammar may reference the same rule multiple times. In that case, the states of each reference
 	// must be independent.
 	Copy(RuleRefs) Expansion
+
+	ScanIDAndMatch(Scorer)
 }
-
-// State is the internal representation of an Expansion which matched an utterance. This is used to determine the
-// path that matched when scanning the match into a processor
-type State interface{}
-
-type AlternativeState struct {
-	index int
-	state State
-}
-
-type SequenceState []State
-
-type ItemState []State
 
 // Grammar is a representation of an SRGS grammar.
 type Grammar struct {
@@ -73,6 +62,17 @@ type Grammar struct {
 // Creates a new grammar
 func NewGrammar() *Grammar {
 	return new(Grammar)
+}
+
+// Returns whether a specific string is a prefix of the grammar. For example, a grammar that matches the string
+// "i want to go to the park", will also return true for HasPrefix("i want to g")
+func (g *Grammar) GetScoreForPrefix(str string) float64 {
+	if !g.HasPrefix(str) {
+		return -1000
+	}
+	scorer := new(ScorerImplementation)
+	g.root.ScanIDAndMatch(scorer)
+	return scorer.GetScore()
 }
 
 // Returns whether a specific string is a prefix of the grammar. For example, a grammar that matches the string
@@ -245,6 +245,19 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 					if scan == "true" {
 						tempGarbage.scanMatch = true
 					}
+					continue
+				}
+
+				if special == "SLM" {
+					tempSLM := new(SLM)
+					out.exps = append(out.exps, tempSLM)
+					scan := el.SelectAttrValue("scan-match", "")
+					if scan == "true" {
+						tempSLM.scanMatch = true
+					}
+					tempSLM.uri = el.SelectAttrValue("slm-uri", "defaultURI")
+					tempLM = new(kenlm(tempSLM.uri))
+					tempSLM.lm = &tempLM
 					continue
 				}
 

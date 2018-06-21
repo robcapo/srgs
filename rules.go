@@ -38,3 +38,7 @@ scopes[scopes.length-1]['rules']['%s'] = {'out': last.out, 'raw': last.raw};
 scopes[scopes.length-1]['raw'] = scopes[scopes.length-1]['raw'] ? scopes[scopes.length-1]['raw'] + ' ' + last.raw : last.raw;
 `, r.ruleId))
 }
+
+func (r *RuleRef) ScanIDAndMatch(s Scorer) {
+	r.rule.ScanIDAndMatch(s)
+}

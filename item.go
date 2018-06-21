@@ -127,3 +127,9 @@ func (it *Item) Scan(processor Processor) {
 		it.children[i].Scan(processor)
 	}
 }
+
+func (it *Item) ScanIDAndMatch(s Scorer) {
+	for i := 1; i <= it.scanInd; i++ {
+		it.children[i].ScanIDAndMatch(s)
+	}
+}

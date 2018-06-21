@@ -52,3 +52,7 @@ func (a *Alternative) Next() (string, error) {
 func (a *Alternative) Scan(p Processor) {
 	a.items[a.currentInd].Scan(p)
 }
+
+func (a *Alternative) ScanIDAndMatch(s Scorer) {
+	a.items[a.currentInd].ScanIDAndMatch(s)
+}

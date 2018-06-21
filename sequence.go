@@ -68,3 +68,9 @@ func (s *Sequence) Scan(p Processor) {
 		exp.Scan(p)
 	}
 }
+
+func (s *Sequence) ScanIDAndMatch(scorer Scorer) {
+	for _, exp := range s.exps {
+		exp.ScanIDAndMatch(scorer)
+	}
+}

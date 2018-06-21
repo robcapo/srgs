@@ -81,3 +81,7 @@ func (t *Token) Scan(p Processor) {
 	p.AppendString(t.token)
 
 }
+
+func (t *Token) ScanIDAndMatch(s Scorer) {
+	s.AppendIDAndMatch("token", t.str)
+}

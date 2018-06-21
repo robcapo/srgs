@@ -6,7 +6,7 @@ import (
 )
 
 type Garbage struct {
-	match     string
+	str       string
 	scanMatch bool
 
 	currentInd int
@@ -14,19 +14,19 @@ type Garbage struct {
 
 func (g *Garbage) Match(str string, mode MatchMode) {
 	g.currentInd = -1
-	g.match = str
+	g.str = str
 }
 
 func (g *Garbage) Next() (string, error) {
-	if g.currentInd == len(g.match) {
+	if g.currentInd == len(g.str) {
 		return "", NoMatch
 	}
 
 	if g.currentInd != -1 {
-		ind := strings.Index(g.match[g.currentInd:], " ")
+		ind := strings.Index(g.str[g.currentInd:], " ")
 
 		if ind == -1 {
-			ind = len(g.match) - 1 - g.currentInd
+			ind = len(g.str) - 1 - g.currentInd
 		}
 
 		g.currentInd += ind
@@ -34,15 +34,17 @@ func (g *Garbage) Next() (string, error) {
 
 	g.currentInd++
 
-	return g.match[g.currentInd:], nil
+	return g.str[g.currentInd:], nil
 }
 
 func (g *Garbage) Copy(r RuleRefs) Expansion {
-	return &Garbage{match: g.match, currentInd: g.currentInd, scanMatch: g.scanMatch}
+	return &Garbage{str: g.str, currentInd: g.currentInd, scanMatch: g.scanMatch}
 }
 func (g *Garbage) Scan(processor Processor) {
 	processor.AppendTag(fmt.Sprintf(`
 scopes[scopes.length-1]['GARBAGE'] = "%s";
-`, g.match[:g.currentInd]))
-	processor.AppendString(g.match[:g.currentInd])
+`, g.str[:g.currentInd]))
+	processor.AppendString(g.str[:g.currentInd])
 }
+
+func (g *Garbage) ScanIDAndMatch(scorer Scorer) {}
