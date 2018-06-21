@@ -74,7 +74,7 @@ func (it *Item) Next() (string, float64, error) {
 	var matchProb float64
 
 	var lastSuccessfulString string
-	var lastMatchProb
+	var lastMatchProb float64
 	var hadSuccess bool
 	// loop all the way up to the child right before the min-repeat
 	for {

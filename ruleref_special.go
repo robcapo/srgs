@@ -16,12 +16,21 @@ type SLM struct {
 	str       string
 	scanMatch bool
 
+	uri string
+
 	currentInd int
 }
 
 func (s *SLM) Match(str string, mode MatchMode) {
 	s.currentInd = -1
 	s.str = str
+}
+
+func (s *SLM) CallLM(str string, uri string) float64 {
+	if str != "" {
+		return .5
+	}
+	return 0
 }
 
 func (s *SLM) Next() (string, float64, error) {
@@ -38,16 +47,19 @@ func (s *SLM) Next() (string, float64, error) {
 
 		s.currentInd += ind
 
-		//matchProb := callKLM(s.str[s.currentInd:])
-		var matchProb float64
+		matchProb := s.CallLM(s.str[s.currentInd:], s.uri)
 
-		if matchProb != 0 {
+		if matchProb == 0 {
+			return "", matchProb, NoMatch
+		} else {
 			s.currentInd++
 			return s.str[s.currentInd:], matchProb, nil
 		}
 	}
 
-	return "", 0, NoMatch
+	s.currentInd++
+
+	return s.str[s.currentInd:], 1, nil
 }
 
 func (s *SLM) Copy(r RuleRefs) Expansion {

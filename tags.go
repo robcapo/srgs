@@ -16,14 +16,14 @@ func (t *Tag) Match(str string, mode MatchMode) {
 	t.called = false
 }
 
-func (t *Tag) Next() (string, error) {
+func (t *Tag) Next() (string, float64, error) {
 	if t.called == true {
-		return "", NoMatch
+		return "", 0, NoMatch
 	}
 
 	t.called = true
 
-	return t.match, nil
+	return t.match, 1, nil
 }
 
 func (t *Tag) Scan(p Processor) {

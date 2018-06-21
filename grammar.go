@@ -251,6 +251,11 @@ func (g *Grammar) decodeElement(element *etree.Element) (Expansion, error) {
 				if special == "SLM" {
 					tempSLM := new(SLM)
 					out.exps = append(out.exps, tempSLM)
+					scan := el.SelectAttrValue("scan-match", "")
+					if scan == "true" {
+						tempSLM.scanMatch = true
+					}
+					tempSLM.uri = el.SelectAttrValue("slm-uri", "defaultURI")
 					continue
 				}
 
